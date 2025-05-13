@@ -16,6 +16,7 @@ const props = defineProps<{
     order_number: number;
     order: Array<{
         id: number;
+        invoice_id: number;
         performance: string;
         date: string;
         qm: number;
