@@ -1,22 +1,22 @@
-<script setup lang="ts">
+<script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import {Head, useForm} from '@inertiajs/vue3';
-import {defineProps, computed, ref} from "vue";
-import {MenuButton, MenuItem, MenuItems, Menu} from "@headlessui/vue";
-import StatusBadge from "@/Components/StatusBadge.vue";
-import PerformanceTable from "@/Components/PerformanceTable.vue";
-import dayjs from "dayjs";
-import {generateInvoice} from "@/Composables/generateInvoicePDF";
-import FileUploader from "@/Components/FileUploader.vue";
-import {generateInvoiceAndSend} from "@/Composables/generateAndSendInvoicePDF";
+import { Head, useForm } from '@inertiajs/vue3';
+import { defineProps, computed, ref } from 'vue';
+import { MenuButton, MenuItem, MenuItems, Menu } from '@headlessui/vue';
+import StatusBadge from '@/Components/StatusBadge.vue';
+import PerformanceTable from '@/Components/PerformanceTable.vue';
+import dayjs from 'dayjs';
+import { generateInvoice } from '@/Composables/generateInvoicePDF';
+import FileUploader from '@/Components/FileUploader.vue';
+import { generateInvoiceAndSend } from '@/Composables/generateAndSendInvoicePDF';
 
 const props = defineProps({
-    invoice: Object, // Die Rechnung wird von Laravel über Inertia bereitgestellt
+    invoice: Object, // Wird über Inertia von Laravel übergeben
 });
 
 const formattedDate = computed(() => {
     return props.invoice?.updated_at
-        ? dayjs(props.invoice?.updated_at).format('DD.MM.YYYY')
+        ? dayjs(props.invoice.updated_at).format('DD.MM.YYYY')
         : 'Unbekanntes Datum';
 });
 
@@ -25,36 +25,39 @@ const statuses = {
     waiting_for_invoice: 'Wartet auf Rechnung',
     invoice_sent: 'Rechnung Verschickt',
     completed: 'Abgeschlossen',
-    canceled: 'Storniert'
+    canceled: 'Storniert',
 };
+
 const selectedStatus = ref('');
 const isOpen = ref(false);
+
 function toggleDropdown() {
     isOpen.value = !isOpen.value;
 }
 
 const generateInvoicePDF = () => {
-    console.log(props.invoice)
+    console.log(props.invoice);
     generateInvoice(props.invoice);
-}
+};
 
 const sendInvoice = () => {
     generateInvoiceAndSend(props.invoice);
 };
 
-const deleteFile = (fileId: number) => {
-    if (confirm("Möchtest du diese Datei wirklich löschen?")) {
+const deleteFile = (fileId) => {
+    if (confirm('Möchtest du diese Datei wirklich löschen?')) {
         const form = useForm({});
 
         form.delete(`/assets/${fileId}`, {
             preserveScroll: true,
             onSuccess: () => {
-                console.log("Datei gelöscht:", fileId);
+                console.log('Datei gelöscht:', fileId);
             },
         });
     }
 };
 </script>
+
 
 <template>
     <Head title="Dashboard" />

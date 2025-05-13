@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from "vue";
 import {
     Dialog,
@@ -9,32 +9,17 @@ import {
 import dayjs from "dayjs";
 import { ErrorMessage, Field, Form as VeeForm } from "vee-validate";
 import * as yup from "yup";
-import {usePerformanceStore} from "@/store/performanceStore";
+import { usePerformanceStore } from "@/store/performanceStore";
 
-
-const props = defineProps<{
-    order_number: number;
-    order: Array<{
-        id: number;
-        invoice_id: number;
-        performance: string;
-        date: string;
-        qm: number;
-        price: number;
-        flatrate: boolean;
-        status: string;
-        date_change_to: string;
-    }>;
-}>();
+const props = defineProps();
 
 const performances = ref(props.order);
 const open = ref(false);
 const changeDate = ref(false);
 const selectedDate = ref("");
-const selectedPerformanceId = ref<number | null>(null);
+const selectedPerformanceId = ref(null);
 const dateTime = ref("");
 const performanceStore = usePerformanceStore();
-//const { addNotification } = useNotifications();
 
 const schema = yup.object({
     qm: yup.string().required(),
@@ -43,9 +28,9 @@ const schema = yup.object({
     flatrate: yup.boolean(),
 });
 
-const flatrateText = (flatrate: boolean) => (flatrate ? "Pauschal" : "Nicht pauschal");
+const flatrateText = (flatrate) => (flatrate ? "Pauschal" : "Nicht pauschal");
 
-const formatDateHours = (date: string) => dayjs(date).format("DD.MM.YYYY HH:mm");
+const formatDateHours = (date) => dayjs(date).format("DD.MM.YYYY HH:mm");
 
 const calculateTotalPrice = () =>
     performances.value.reduce(
@@ -56,9 +41,8 @@ const calculateTotalPrice = () =>
         0
     );
 
-
-const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; class: string }> = {
+const getStatusBadge = (status) => {
+    const statusMap = {
         canceled: { label: "Storniert", class: "bg-red-100 text-red-600" },
         date_change: { label: "Termin Verschoben", class: "bg-yellow-100 text-yellow-600" },
         no_change: { label: "Keine Veränderung", class: "bg-green-100 text-green-600" },
@@ -66,65 +50,51 @@ const getStatusBadge = (status: string) => {
     return statusMap[status] ?? { label: "Unbekannt", class: "bg-gray-100 text-gray-600" };
 };
 
-const handleDateChange = (event: Event) => {
-    const inputDate = (event.target as HTMLInputElement).value;
+const handleDateChange = (event) => {
+    const inputDate = event.target.value;
     dateTime.value = dayjs(inputDate).format("YYYY-MM-DDTHH:mm:ss");
 };
 
-const onSubmit = async (values: any) => {
+const onSubmit = async (values) => {
     try {
-        console.log("VALUES ", values);
-        console.log("ORDER NUMBER ", props.order_number);
-        console.log("DATE TIME ", dateTime.value);
-
         const newPerformance = await performanceStore.addPerformance(values, props.order_number, dateTime.value);
-
         if (newPerformance) {
-            performances.value.push(newPerformance); // UI sofort aktualisieren
+            performances.value.push(newPerformance);
         }
-
-        open.value = false; // Dialog schließen
+        open.value = false;
     } catch (e) {
         console.error(e);
     }
 };
 
-
-const changeToCanceled = async (id: number) => {
+const changeToCanceled = async (id) => {
     try {
         const updatedPerformance = await performanceStore.changePerformanceStatus(id, "canceled");
-
-        if (updatedPerformance) {
-            const performance = performances.value.find((p) => p.id === id);
-            if (performance) {
-                performance.status = "canceled";
-            }
+        const performance = performances.value.find((p) => p.id === id);
+        if (performance) {
+            performance.status = "canceled";
         }
-
-        // addNotification("success", "Auftrag", "Auftrag wurde erfolgreich storniert");
     } catch (e) {
         console.error("Fehler beim Stornieren der Performance:", e);
     }
 };
 
-
-const deletePerformance = async (id: number) => {
+const deletePerformance = async (id) => {
     try {
         await performanceStore.deletePerformance(id);
         performances.value = performances.value.filter((p) => p.id !== id);
-        //addNotification("success", "Auftrag", "Auftrag wurde erfolgreich gelöscht");
     } catch (e) {
         console.error(e);
     }
 };
 
-const openChangeDateDialog = (performanceId: number, currentChangeDate: string) => {
+const openChangeDateDialog = (performanceId, currentChangeDate) => {
     selectedPerformanceId.value = performanceId;
     selectedDate.value = dayjs(currentChangeDate).format("YYYY-MM-DDTHH:mm");
     changeDate.value = true;
 };
 
-const changeToNoChange = async (id: number) => {
+const changeToNoChange = async (id) => {
     try {
         await performanceStore.changePerformanceStatus(id, "no_change");
         const performance = performances.value.find((p) => p.id === id);
@@ -136,11 +106,9 @@ const changeToNoChange = async (id: number) => {
     }
 };
 
-
 const updateDateChange = async () => {
     try {
         if (selectedPerformanceId.value && selectedDate.value) {
-            // Konvertiere in das richtige MySQL-Format: YYYY-MM-DD HH:mm:ss
             const formattedDate = dayjs(selectedDate.value).format("YYYY-MM-DD HH:mm:ss");
 
             const updatedPerformance = await performanceStore.changePerformanceDate(
@@ -149,10 +117,9 @@ const updateDateChange = async () => {
                 "date_change"
             );
 
-            // UI sofort aktualisieren
             const performance = performances.value.find((p) => p.id === selectedPerformanceId.value);
             if (performance) {
-                performance.date_changed_to = formattedDate;
+                performance.date_change_to = formattedDate;
                 performance.status = "date_change";
             }
 
@@ -162,8 +129,6 @@ const updateDateChange = async () => {
         console.error("Fehler beim Ändern des Datums:", e);
     }
 };
-
-
 </script>
 
 <template>

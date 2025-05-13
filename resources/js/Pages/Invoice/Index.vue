@@ -1,13 +1,20 @@
-<script setup lang="ts">
+<script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { PlusIcon} from "@heroicons/vue/24/outline";
-import {Dialog, DialogOverlay, DialogPanel, DialogTitle, Switch, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import { ErrorMessage, Field, Form as VeeForm } from 'vee-validate';
+import { PlusIcon } from "@heroicons/vue/24/outline";
+import {
+    Dialog,
+    DialogOverlay,
+    DialogPanel,
+    DialogTitle,
+    Switch,
+    TransitionChild,
+    TransitionRoot,
+} from "@headlessui/vue";
+import { ErrorMessage, Field, Form as VeeForm } from "vee-validate";
 import * as yup from "yup";
-import {onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 import axios from "axios";
-import {Invoice} from "@/types/invoice";
-import { router } from '@inertiajs/vue3';
+import { router } from "@inertiajs/vue3";
 
 const open = ref(false);
 const companies = ref([]);
@@ -15,56 +22,52 @@ const invoices = ref([]);
 
 const fetchCompanies = async () => {
     try {
-        const response = await axios.get('/api/companies');
+        const response = await axios.get("/api/companies");
         companies.value = response.data;
     } catch (error) {
-        console.error('Fehler beim Laden der Unternehmen:', error);
+        console.error("Fehler beim Laden der Unternehmen:", error);
     }
 };
 
-
-const onSubmit = async (values: Invoice) => { // ✅ Werte mit Typ `Invoice` typisieren
+const onSubmit = async (values) => {
     try {
-        await axios.get('/sanctum/csrf-cookie'); // CSRF-Schutz holen
-        const response = await axios.post<Invoice>('/api/invoices', values, { // ✅ API-Antwort ist auch `Invoice`
+        await axios.get("/sanctum/csrf-cookie");
+        const response = await axios.post("/api/invoices", values, {
             withCredentials: true,
         });
 
         //toast.success('Rechnung erfolgreich erstellt!');
-        open.value = false; // Modal schließen
+        open.value = false;
     } catch (error) {
-        console.error('Fehler beim Erstellen der Rechnung:', error);
+        console.error("Fehler beim Erstellen der Rechnung:", error);
         //toast.error('Fehler beim Erstellen der Rechnung');
     }
 };
 
-
 const fetchInvoices = async () => {
     try {
-        const response = await axios.get('/api/invoices');
+        const response = await axios.get("/api/invoices");
         invoices.value = response.data;
     } catch (error) {
-        console.error('Fehler beim Laden der Rechnungen:', error);
+        console.error("Fehler beim Laden der Rechnungen:", error);
     }
 };
 
-const goToInvoice = async (invoiceId: number) => {
+const goToInvoice = async (invoiceId) => {
     try {
-        console.log('Navigiere zu Rechnung:', invoiceId);
-        await router.visit(`/invoice/${invoiceId}`); // Direkt zur URL
+        console.log("Navigiere zu Rechnung:", invoiceId);
+        await router.visit(`/invoice/${invoiceId}`);
     } catch (error) {
-        console.error('Navigation fehlgeschlagen:', error);
+        console.error("Navigation fehlgeschlagen:", error);
     }
 };
-
 
 onMounted(async () => {
     await fetchCompanies();
     await fetchInvoices();
 });
-
-
 </script>
+
 
 <template>
     <AuthenticatedLayout>
@@ -129,7 +132,7 @@ onMounted(async () => {
                     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                         <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                             <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
-                                <VeeForm v-slot="{ handleSubmit, isSubmitting, values }: { handleSubmit: (fn: (values: Invoice) => void) => void; isSubmitting: boolean; values: Invoice; }" :validation-schema="schema">
+                                <VeeForm v-slot="{ handleSubmit, isSubmitting, values }" :validation-schema="schema">
                                     <form @submit.prevent="handleSubmit(onSubmit)" class="space-y-6">
                                         <div>
                                             <label for="project_number" class="block text-sm font-medium text-gray-700">Projektnummer</label>
