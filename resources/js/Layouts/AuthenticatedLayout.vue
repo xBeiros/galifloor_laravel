@@ -11,16 +11,15 @@ const showingNavigationDropdown = ref(false);
 
 const navigationLinks = [
     { name: 'Dashboard', route: 'dashboard' },
-    { name: 'Rechnungsliste', route: 'invoices' }
+    { name: 'Rechnungsliste', route: 'invoices' },
+    { name: 'Firmen', route: 'companies' }
 ];
 </script>
 
 <template>
     <div>
         <div class="min-h-screen bg-gray-100">
-            <nav
-                class="border-b border-gray-100 bg-white"
-            >
+            <nav class="border-b border-gray-100 bg-white">
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 justify-between">

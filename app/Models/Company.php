@@ -13,7 +13,11 @@ class Company extends Model
         'name',
         'address',
         'city',
-        'postal'
+        'postal',
+        'email',
+        'image_url',
+        'security_service',
+        'cash_discount',
     ];
 
     // Beziehung: Eine Firma kann mehrere Rechnungen haben

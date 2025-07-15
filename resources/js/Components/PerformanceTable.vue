@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import {computed, ref} from "vue";
 import {
     Dialog,
     DialogPanel,
@@ -13,13 +13,14 @@ import { usePerformanceStore } from "@/store/performanceStore";
 
 const props = defineProps();
 
-const performances = ref(props.order);
 const open = ref(false);
 const changeDate = ref(false);
 const selectedDate = ref("");
 const selectedPerformanceId = ref(null);
 const dateTime = ref("");
 const performanceStore = usePerformanceStore();
+const performances = computed(() => Array.isArray(props.order) ? props.order : []);
+console.log(props.order)
 
 const schema = yup.object({
     qm: yup.string().required(),
@@ -32,14 +33,18 @@ const flatrateText = (flatrate) => (flatrate ? "Pauschal" : "Nicht pauschal");
 
 const formatDateHours = (date) => dayjs(date).format("DD.MM.YYYY HH:mm");
 
-const calculateTotalPrice = () =>
-    performances.value.reduce(
+const calculateTotalPrice = () => {
+    if (!Array.isArray(performances.value)) return 0;
+
+    return performances.value.reduce(
         (total, { qm, price, status, flatrate }) =>
             status !== "canceled"
                 ? total + (flatrate ? price : qm * price)
                 : total,
         0
     );
+};
+
 
 const getStatusBadge = (status) => {
     const statusMap = {

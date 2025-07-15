@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InvoiceController;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -56,3 +57,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 });
 
 Route::middleware('auth:sanctum')->post('/performances', [PerformanceController::class, 'store']);
+
+// Company Routes
+Route::put('/companies/{company}', [CompanyController::class, 'update']);
+Route::post('/companies', [CompanyController::class, 'store']);
