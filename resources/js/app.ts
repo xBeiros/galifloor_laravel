@@ -12,12 +12,11 @@ const pinia = createPinia();
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => {
-    // alle Pages direkt ins Haupt-Bundle packen (inkl. [invoice].vue)
-        const pages = import.meta.glob<DefineComponent>('./Pages/**/*.vue', { eager: true });
-    // Helper kümmert sich um die Promise/Component-Konversion
-        return resolvePageComponent(`./Pages/${name}.vue`, pages);
-    },
+    resolve: (name) =>
+        resolvePageComponent(
+            `./Pages/${name}.vue`,
+            import.meta.glob<DefineComponent>('./Pages/**/*.vue')
+        ),
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
