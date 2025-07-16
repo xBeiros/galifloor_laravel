@@ -38,4 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
+     ->name('invoices.update');
+
+
 require __DIR__.'/auth.php';

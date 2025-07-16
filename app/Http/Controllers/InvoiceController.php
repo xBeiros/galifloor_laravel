@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
@@ -77,4 +78,22 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoice.index')->with('success', 'Rechnung wurde erstellt.');
     }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in([
+                'in_progress',
+                'waiting_for_invoice',
+                'invoice_sent',
+                'completed',
+                'canceled',
+            ])],
+        ]);
+
+        $invoice->update($data);
+
+        return redirect()->back()->with('success', 'Status wurde aktualisiert.');
+    }
+
 }
