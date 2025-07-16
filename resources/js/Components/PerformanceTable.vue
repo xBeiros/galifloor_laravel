@@ -11,7 +11,9 @@ import { ErrorMessage, Field, Form as VeeForm } from "vee-validate";
 import * as yup from "yup";
 import { usePerformanceStore } from "@/store/performanceStore";
 
-const props = defineProps();
+const props = defineProps({
+    order: Object, // Wird über Inertia von Laravel übergeben
+});
 
 const open = ref(false);
 const changeDate = ref(false);
