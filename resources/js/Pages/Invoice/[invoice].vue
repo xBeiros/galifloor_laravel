@@ -56,6 +56,20 @@ const deleteFile = (fileId) => {
         });
     }
 };
+
+const form = useForm({
+  status: props.invoice.status,
+});
+
+function updateStatus(newStatus) {
+    form.status = newStatus;         // Payload korrekt aktualisieren
+    form.patch(`/invoices/${props.invoice.id}`, {
+        preserveScroll: true,
+        onSuccess: () => console.log('Status aktualisiert:', newStatus),
+        onError:   errors => console.error(errors),
+    });
+}
+
 </script>
 
 
@@ -76,7 +90,7 @@ const deleteFile = (fileId) => {
                 <!-- Linker Teil: Firmenlogo und Informationen -->
                 <div class="flex">
                     <div>
-                        <img :src="`${asset}/${invoice?.company?.image_url || 'default-logo.png'}`" alt="Company Logo" class="h-16 w-16 object-contain">
+                        <img :src="`${invoice?.company?.image_url}`" alt="Company Logo" class="h-16 w-16 object-contain">
                     </div>
 
                     <div class="ml-4">
@@ -93,13 +107,10 @@ const deleteFile = (fileId) => {
 
                 <div class="w-60">
                     <div class="w-full">
-                        <button @click="sendInvoice()" type="button" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                            Rechnung Senden
-                        </button>
-                        <button v-if="invoice.invoice_send" @click="generateInvoicePDF()" type="button" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        <button @click="generateInvoicePDF()" type="button" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                             Rechnung Herunterladen
                         </button>
-                        <button v-if="invoice?.order_send" @click="generateInvoicePDF()" type="button" class="mt-1 inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        <button v-if="invoice?.status === 'completed'" @click="generateInvoicePDF()" type="button" class="mt-1 inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                             IVEHA Auftrag Herunterladen
                         </button>
                     </div>
