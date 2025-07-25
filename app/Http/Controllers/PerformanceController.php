@@ -16,7 +16,7 @@ class PerformanceController extends Controller
     public function index($invoiceId)
     {
         $performances = Performance::where('invoice_id', $invoiceId)->get();
-        return Inertia::render('Invoice/[invoice]', [
+        return Inertia::render('Invoice/Show', [
             'performances' => $performances
         ]);
     }
