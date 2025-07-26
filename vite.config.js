@@ -23,4 +23,9 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),
         },
     },
+    build: {
+        rollupOptions: {
+            preserveEntrySignatures: 'strict'
+        }
+    }
 });

@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import ShowInvoice from './Show.vue'
 import { PlusIcon } from "@heroicons/vue/24/outline";
 import {
     Dialog,
