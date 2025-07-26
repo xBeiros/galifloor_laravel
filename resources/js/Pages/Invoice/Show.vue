@@ -28,6 +28,8 @@ const statuses = {
     canceled: 'Storniert',
 };
 
+console.log(props.invoice)
+
 const selectedStatus = ref('');
 const isOpen = ref(false);
 

@@ -12,7 +12,8 @@ import * as yup from "yup";
 import { usePerformanceStore } from "@/store/performanceStore";
 
 const props = defineProps({
-    order: Object, // Wird über Inertia von Laravel übergeben
+    order: Object,
+    order_number: Number
 });
 
 const open = ref(false);
