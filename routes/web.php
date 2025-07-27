@@ -6,11 +6,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\EmployeeController;
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        //'canRegister' => Route::has('register'),
+        'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
@@ -40,6 +42,14 @@ Route::middleware('auth')->group(function () {
 
 Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
      ->name('invoices.update');
+
+
+Route::resource('employee', EmployeeController::class);
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employee/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+    Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+});
 
 
 require __DIR__.'/auth.php';

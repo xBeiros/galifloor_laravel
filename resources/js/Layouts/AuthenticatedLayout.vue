@@ -12,8 +12,10 @@ const showingNavigationDropdown = ref(false);
 const navigationLinks = [
     { name: 'Dashboard', route: 'dashboard' },
     { name: 'Rechnungsliste', route: 'invoices' },
-    { name: 'Firmen', route: 'companies' }
+    { name: 'Firmen', route: 'companies' },
+    { name: 'Mitarbeiter', route: 'employees.index' }
 ];
+
 </script>
 
 <template>
