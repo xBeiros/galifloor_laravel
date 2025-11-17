@@ -17,13 +17,27 @@ export const usePerformanceStore = defineStore('performanceStore', {
 
         async addPerformance(values: any, invoiceId: number, dateTime: string) {
             try {
-                const response = await axios.post(`/api/invoices/${invoiceId}/performances`, {
+                // Formatiere end_date falls vorhanden
+                const payload: any = {
                     ...values,
                     date: dateTime,
-                });
+                };
+                
+                // Wenn end_date vorhanden ist, formatiere es korrekt
+                if (values.end_date) {
+                    payload.end_date = values.end_date;
+                }
+                
+                const response = await axios.post(`/api/invoices/${invoiceId}/performances`, payload);
 
                 if (response.data) {
-                    this.performances.push(response.data); // Neu erstellte Performance zur Liste hinzufügen
+                    // Wenn mehrere Performances erstellt wurden (Array), alle hinzufügen
+                    // Normalerweise sollte nur eine Performance zurückgegeben werden
+                    if (Array.isArray(response.data)) {
+                        this.performances.push(...response.data);
+                    } else {
+                        this.performances.push(response.data);
+                    }
                 }
 
                 return response.data;

@@ -1,18 +1,18 @@
 <template>
     <div
-        class="border-dashed border-2 border-gray-400 p-6 rounded-lg text-center"
+        class="border-dashed border-2 border-gray-400 dark:border-gray-600 p-6 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50"
         @dragover.prevent="dragging = true"
         @dragleave.prevent="dragging = false"
         @drop.prevent="handleDrop"
-        :class="{ 'bg-gray-200': dragging }"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': dragging }"
     >
         <input type="file" ref="fileInput" multiple class="hidden" @change="handleFileSelect" />
-        <p class="text-gray-700">
+        <p class="text-gray-700 dark:text-gray-300">
             Dateien hierhin ziehen oder
-            <span class="text-blue-500 cursor-pointer" @click="selectFile">Dateien auswählen</span>
+            <span class="text-blue-500 dark:text-blue-400 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300" @click="selectFile">Dateien auswählen</span>
         </p>
         <ul class="mt-4">
-            <li v-for="file in files" :key="file.name" class="text-sm text-gray-600">
+            <li v-for="file in files" :key="file.name" class="text-sm text-gray-600 dark:text-gray-400">
                 {{ file.name }}
             </li>
         </ul>

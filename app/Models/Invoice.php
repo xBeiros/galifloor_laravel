@@ -16,7 +16,9 @@ class Invoice extends Model
         'address',
         'city',
         'postal',
-        'status'
+        'status',
+        'start_date',
+        'end_date'
     ];
 
     public static function boot()

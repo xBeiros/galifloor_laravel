@@ -13,6 +13,7 @@ class Performance extends Model
         'invoice_id',
         'performance',
         'date',
+        'end_date',
         'date_changed_to',
         'qm',
         'price',

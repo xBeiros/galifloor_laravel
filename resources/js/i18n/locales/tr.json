@@ -1,0 +1,281 @@
+{
+    "nav": {
+        "dashboard": "Kontrol Paneli",
+        "invoices": "Fatura Listesi",
+        "calendar": "Takvim",
+        "companies": "Şirketler",
+        "company": "Şirket",
+        "employees": "Çalışanlar"
+    },
+    "common": {
+        "profile": "Profil",
+        "logout": "Çıkış Yap",
+        "language": "Dil",
+        "dark_mode": "Karanlık Mod",
+        "light_mode": "Aydınlık Mod"
+    },
+    "dashboard": {
+        "title": "Kontrol Paneli",
+        "open_invoices": "Açık Faturalar",
+        "completed": "Tamamlanan",
+        "canceled": "İptal Edilen",
+        "invoices_year": "{year} Faturaları"
+    },
+    "invoices": {
+        "title": "Fatura Listesi",
+        "description": "Tutar, tarih ve durum detaylarıyla tüm faturaların özeti.",
+        "add_order": "Sipariş Ekle",
+        "invoice_number": "Fat. No.",
+        "project_number": "Proje Numarası",
+        "company": "Şirket",
+        "construction": "İnşaat Sahası",
+        "address": "Adres",
+        "city": "Şehir",
+        "modal": {
+            "title": "Yeni Sipariş",
+            "project_number": "Proje Numarası",
+            "company": "Şirket",
+            "construction": "İnşaat Sahası",
+            "address": "Adres",
+            "postal": "Posta Kodu",
+            "city": "Şehir",
+            "start_date": "Başlangıç Tarihi",
+            "end_date": "Bitiş Tarihi",
+            "submit": "Gönder"
+        },
+        "show": {
+            "title": "Sipariş",
+            "download_invoice": "Faturayı İndir",
+            "download_iveha": "IVEHA Siparişi İndir",
+            "options": "Seçenekler",
+            "order_address": "Sipariş Adresi",
+            "order_details": "Sipariş Detayları",
+            "created_at": "Oluşturulma Tarihi",
+            "order_number": "Sipariş Numarası",
+            "invoice_number_label": "Fatura Numarası",
+            "upload_file": "Dosya Yükle",
+            "uploaded_files": "Yüklenen Dosyalar",
+            "delete": "Sil",
+            "status": {
+                "in_progress": "İşlemde",
+                "waiting_for_invoice": "Fatura Bekleniyor",
+                "invoice_sent": "Fatura Gönderildi",
+                "completed": "Tamamlandı",
+                "canceled": "İptal Edildi"
+            }
+        }
+    },
+    "company": {
+        "show_all": {
+            "title": "Şirketim",
+            "contact_data": "İletişim Bilgileri",
+            "email": "E-Posta",
+            "email_secondary": "E-Posta (diğer)",
+            "phone": "Telefon",
+            "no_contact": "İletişim bilgisi belirtilmemiş",
+            "address": "Adres",
+            "street": "Sokak",
+            "postal": "Posta Kodu",
+            "city": "Şehir",
+            "company_info": "Şirket Bilgileri",
+            "tax_id": "Vergi Kimlik Numarası",
+            "no_tax_id": "Vergi kimlik numarası belirtilmemiş",
+            "owner": "Şirket Sahibi",
+            "secretary": "Yetkili Sekreter",
+            "employees": "Çalışanlar",
+            "no_employees": "Aktif çalışan bulunmuyor"
+        },
+        "index": {
+            "title": "Şirketler Genel Bakış",
+            "companies": "Şirketler",
+            "description": "Tüm ilgili bilgilerle kaydedilmiş şirketler.",
+            "add_company": "Yeni Şirket",
+            "logo": "Logo",
+            "name": "İsim",
+            "address": "Adres",
+            "location": "Konum",
+            "email": "E-Posta",
+            "actions": "İşlemler",
+            "edit": "Düzenle",
+            "modal": {
+                "name": "İsim",
+                "email": "E-Posta",
+                "address": "Adres",
+                "postal": "Posta Kodu",
+                "city": "Şehir",
+                "security_service": "Güvenlik Hizmeti",
+                "cash_discount": "Nakit İndirimi",
+                "profile_image": "Profil Resmi",
+                "save": "Kaydet"
+            }
+        }
+    },
+    "employee": {
+        "index": {
+            "title": "Çalışan Yönetimi",
+            "list": "Çalışan Listesi",
+            "add": "Çalışan Ekle",
+            "birth_date": "Doğum Tarihi",
+            "status": "Durum",
+            "modal": {
+                "title": "Yeni Çalışan",
+                "first_name": "Ad",
+                "last_name": "Soyad",
+                "birth_date": "Doğum Tarihi",
+                "status": "Durum",
+                "photo": "Fotoğraf (isteğe bağlı)",
+                "cancel": "İptal",
+                "save": "Kaydet"
+            },
+            "status_map": {
+                "active": "Aktif",
+                "fired": "İşten Çıkarıldı",
+                "sick": "Hasta",
+                "vacation": "Tatil"
+            }
+        },
+        "show": {
+            "no_email": "E-posta belirtilmemiş",
+            "edit": "Düzenle",
+            "create_certificate": "Sertifika Oluştur",
+            "upload_document": "Doküman Yükle",
+            "employee_info": "Çalışan Bilgileri",
+            "personal_data": "Kişisel Bilgiler",
+            "first_name": "Ad",
+            "last_name": "Soyad",
+            "birth_date": "Doğum Tarihi",
+            "birth_place": "Doğum Yeri",
+            "gender": "Cinsiyet",
+            "gender_male": "Erkek",
+            "gender_female": "Kadın",
+            "nationality": "Uyruk",
+            "address": "Adres",
+            "street": "Sokak",
+            "postal": "Posta Kodu",
+            "city": "Şehir",
+            "contact": "İletişim",
+            "phone": "Telefon",
+            "email": "E-Posta",
+            "no_contact": "İletişim bilgisi yok",
+            "work": "İş",
+            "entry": "Giriş",
+            "weekly_hours": "Haftalık Saatler",
+            "hourly_wage": "Saatlik Ücret",
+            "status": "Durum",
+            "bank": "Banka",
+            "iban": "IBAN",
+            "insurance": "Sigorta",
+            "social_security": "SGK Numarası",
+            "health_insurance": "Sağlık Sigortası",
+            "documents": "Dokümanlar",
+            "no_documents": "Doküman bulunmuyor",
+            "status_map": {
+                "active": "Aktif",
+                "terminated": "İşten Çıkarıldı",
+                "on_leave": "İzinli"
+            }
+        }
+    },
+    "profile": {
+        "title": "Profil",
+        "profile_information": {
+            "title": "Profil Bilgileri",
+            "description": "Hesabınızın profil bilgilerini ve e-posta adresini güncelleyin.",
+            "name": "İsim",
+            "email": "E-Posta",
+            "email_unverified": "E-posta adresiniz doğrulanmamış.",
+            "resend_verification": "Doğrulama e-postasını yeniden göndermek için buraya tıklayın.",
+            "verification_sent": "Yeni bir doğrulama bağlantısı e-posta adresinize gönderildi.",
+            "save": "Kaydet",
+            "saved": "Kaydedildi."
+        },
+        "update_password": {
+            "title": "Şifreyi Güncelle",
+            "description": "Hesabınızın güvende kalması için uzun, rastgele bir şifre kullandığından emin olun.",
+            "current_password": "Mevcut Şifre",
+            "new_password": "Yeni Şifre",
+            "confirm_password": "Şifreyi Onayla",
+            "save": "Kaydet",
+            "saved": "Kaydedildi."
+        },
+        "delete_account": {
+            "title": "Hesabı Sil",
+            "description": "Hesabınız silindiğinde, tüm kaynakları ve verileri kalıcı olarak silinecektir. Hesabınızı silmeden önce, saklamak istediğiniz tüm verileri veya bilgileri indirin.",
+            "button": "Hesabı Sil",
+            "confirm_title": "Hesabınızı silmek istediğinizden emin misiniz?",
+            "confirm_description": "Hesabınız silindiğinde, tüm kaynakları ve verileri kalıcı olarak silinecektir. Hesabınızı kalıcı olarak silmek istediğinizi onaylamak için lütfen şifrenizi girin.",
+            "password": "Şifre",
+            "cancel": "İptal",
+            "delete": "Hesabı Sil"
+        }
+    },
+    "calendar": {
+        "title": "Takvim",
+        "today": "Bugün",
+        "months": {
+            "january": "Ocak",
+            "february": "Şubat",
+            "march": "Mart",
+            "april": "Nisan",
+            "may": "Mayıs",
+            "june": "Haziran",
+            "july": "Temmuz",
+            "august": "Ağustos",
+            "september": "Eylül",
+            "october": "Ekim",
+            "november": "Kasım",
+            "december": "Aralık"
+        },
+        "days": {
+            "monday": "Pzt",
+            "tuesday": "Sal",
+            "wednesday": "Çar",
+            "thursday": "Per",
+            "friday": "Cum",
+            "saturday": "Cmt",
+            "sunday": "Paz"
+        },
+        "legend": {
+            "title": "Açıklama",
+            "in_progress": "İşlemde",
+            "waiting_for_invoice": "Fatura Bekleniyor",
+            "invoice_sent": "Fatura Gönderildi",
+            "completed": "Tamamlandı",
+            "canceled": "İptal Edildi",
+            "start_date": "Başlangıç Tarihi",
+            "end_date": "Bitiş Tarihi",
+            "performance": "Performans"
+        }
+    },
+    "performance": {
+        "add": "Performans Ekle",
+        "performance": "Performans",
+        "date": "Tarih",
+        "date_time": "Tarih ve Saat",
+        "end_date_time": "Bitiş Tarihi ve Saati",
+        "qm": "Metrekare",
+        "price": "Fiyat",
+        "price_per_qm": "m² Başına Fiyat / Sabit",
+        "flatrate": "Sabit",
+        "not_flatrate": "Sabit Değil",
+        "total_price": "Fiyat",
+        "status": "Durum",
+        "action": "İşlem",
+        "total": "Toplam",
+        "submit": "Randevu Kaydet",
+        "multiple_days": "Birden Fazla Gün",
+        "multiple_days_info": "Etkinleştirildiğinde, tarih aralığındaki her gün için ayrı bir performans oluşturulur.",
+        "end_date_required": "Bitiş tarihi gereklidir",
+        "end_date_after_start": "Bitiş tarihi başlangıç tarihinden sonra olmalıdır",
+        "change_date": "Tarihi Değiştir",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "status_map": {
+            "canceled": "İptal Edildi",
+            "date_change": "Randevu Ertelendi",
+            "no_change": "Değişiklik Yok",
+            "unknown": "Bilinmiyor"
+        }
+    }
+}
+

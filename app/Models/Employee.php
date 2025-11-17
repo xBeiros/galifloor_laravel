@@ -15,6 +15,19 @@ class Employee extends Model
         'email',
         'phone',
         'birth_date',
+        'birth_place',
+        'address',
+        'postal',
+        'city',
+        'nationality',
+        'gender',
+        'bank_name',
+        'iban',
+        'social_security_number',
+        'health_insurance',
+        'employment_start',
+        'weekly_hours',
+        'hourly_wage',
         'status',
         'image_path',
     ];
@@ -29,6 +42,11 @@ class Employee extends Model
     {
         if (!$this->image_path) {
             return '/images/default-user.png'; // Fallback
+        }
+
+        // Wenn image_path bereits 'storage/' enthält, verwende es direkt
+        if (str_starts_with($this->image_path, 'storage/')) {
+            return asset($this->image_path);
         }
 
         return asset('storage/' . $this->image_path);

@@ -32,22 +32,48 @@ class PerformanceController extends Controller
         $request->validate([
             'performance' => 'required|string',
             'date' => 'required|date',
-            'qm' => 'required|integer',
+            'end_date' => 'nullable|date|after_or_equal:date',
+            'qm' => 'required|numeric',
             'price' => 'required|numeric',
             'flatrate' => 'boolean',
             'status' => 'in:no_change,date_change,canceled',
+            'multiple_days' => 'boolean',
         ]);
+        
+        // Konvertiere qm zu Integer
+        $qm = (int) $request->qm;
 
+        // Formatiere Datum korrekt
+        $formattedDate = Carbon::parse($request->date)->format('Y-m-d H:i:s');
+        $formattedEndDate = $request->end_date ? Carbon::parse($request->end_date)->format('Y-m-d H:i:s') : null;
+        
+        // Erstelle EINE Performance mit Start- und Enddatum
         $performance = $invoice->performances()->create([
             'performance' => $request->performance,
-            'date' => $request->date,
-            'qm' => $request->qm,
+            'date' => $formattedDate,
+            'end_date' => $formattedEndDate,
+            'qm' => $qm,
             'price' => $request->price,
             'flatrate' => $request->flatrate ?? false,
             'status' => $request->status ?? 'no_change',
         ]);
+        
+        $performances = [$performance];
 
-        return response()->json($performance, 201);
+        // Aktualisiere Invoice start_date und end_date falls nötig
+        $startDate = Carbon::parse($request->date)->startOfDay();
+        $finalEndDate = $request->end_date ? Carbon::parse($request->end_date)->startOfDay() : $startDate;
+        
+        if ($invoice->start_date === null || $startDate->lt(Carbon::parse($invoice->start_date))) {
+            $invoice->start_date = $startDate->format('Y-m-d');
+        }
+        
+        if ($invoice->end_date === null || $finalEndDate->gt(Carbon::parse($invoice->end_date))) {
+            $invoice->end_date = $finalEndDate->format('Y-m-d');
+        }
+        $invoice->save();
+
+        return response()->json($performances, 201);
     }
 
     /**

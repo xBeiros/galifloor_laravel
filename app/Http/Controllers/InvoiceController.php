@@ -72,6 +72,8 @@ class InvoiceController extends Controller
             'address' => 'required|string',
             'postal' => 'required|string',
             'city' => 'required|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
         $invoice = Invoice::create($request->all());

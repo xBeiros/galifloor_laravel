@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -18,9 +22,74 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Debug Route
+Route::get('/debug-employees', function () {
+    $employees = App\Models\Employee::with('documents')->get();
+    $documents = App\Models\EmployeeDocument::all();
+    
+    return response()->json([
+        'employees_count' => $employees->count(),
+        'documents_count' => $documents->count(),
+        'employees' => $employees->map(function($emp) {
+            return [
+                'id' => $emp->id,
+                'name' => $emp->first_name . ' ' . $emp->last_name,
+                'documents_count' => $emp->documents->count(),
+                'image_path' => $emp->image_path,
+                'image_url' => $emp->image_url ?? 'No image_url method',
+                'documents' => $emp->documents
+            ];
+        })
+    ]);
+});
+
+Route::get('/debug-image/{id}', function ($id) {
+    $employee = App\Models\Employee::find($id);
+    if (!$employee) {
+        return response()->json(['error' => 'Employee not found']);
+    }
+    
+    return response()->json([
+        'id' => $employee->id,
+        'name' => $employee->first_name . ' ' . $employee->last_name,
+        'image_path' => $employee->image_path,
+        'image_url' => $employee->image_url,
+        'file_exists' => $employee->image_path ? file_exists(public_path($employee->image_path)) : false,
+        'storage_path' => $employee->image_path ? storage_path('app/public/' . str_replace('storage/', '', $employee->image_path)) : null,
+        'storage_exists' => $employee->image_path ? file_exists(storage_path('app/public/' . str_replace('storage/', '', $employee->image_path))) : false
+    ]);
+});
+
+Route::post('/test-upload', function (Illuminate\Http\Request $request) {
+    \Log::info('Test upload request', [
+        'has_file' => $request->hasFile('image'),
+        'all_files' => $request->allFiles(),
+        'all_data' => $request->all()
+    ]);
+    
+    if ($request->hasFile('image')) {
+        $file = $request->file('image');
+        $path = $file->store('test-uploads', 'public');
+        
+        return response()->json([
+            'success' => true,
+            'path' => $path,
+            'url' => asset('storage/' . $path),
+            'file_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize()
+        ]);
+    }
+    
+    return response()->json(['error' => 'No file uploaded']);
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::get('/calendar', [CalendarController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('calendar');
 
 Route::get('/invoices', function () {
     return Inertia::render('Invoice/Index');
@@ -29,6 +98,10 @@ Route::get('/invoices', function () {
 Route::get('/companies', function () {
     return Inertia::render('Company/Index');
 })->middleware(['auth', 'verified'])->name('companies');
+
+Route::get('/company/details', [CompanyController::class, 'showAll'])
+    ->middleware(['auth', 'verified'])
+    ->name('company.details');
 
 Route::get('/invoice/{invoice}', [InvoiceController::class, 'show'])->name('invoice.show');
 Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
@@ -43,12 +116,23 @@ Route::middleware('auth')->group(function () {
 Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
      ->name('invoices.update');
 
+Route::get('/language/{locale}', [LanguageController::class, 'switchLanguage'])
+     ->name('language.switch');
+
 
 Route::resource('employee', EmployeeController::class);
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employee/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
     Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+    
+    // Dokumenten-Routen für Mitarbeiter
+    Route::post('/employee/{employee}/upload-document', [EmployeeController::class, 'uploadDocument'])->name('employee.upload-document');
+    Route::delete('/employee/document/{document}', [EmployeeController::class, 'deleteDocument'])->name('employee.delete-document');
+    
+    // Bescheinigungs-Routen für Mitarbeiter (jetzt clientseitig mit jsPDF)
+    // Route::post('/employee/{employee}/create-certificate', [App\Http\Controllers\CertificateController::class, 'create'])->name('employee.create-certificate');
+    // Route::get('/certificate-types', [App\Http\Controllers\CertificateController::class, 'getCertificateTypes'])->name('certificate.types');
 });
 
 

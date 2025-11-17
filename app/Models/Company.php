@@ -18,6 +18,7 @@ class Company extends Model
         'image_url',
         'security_service',
         'cash_discount',
+        'tax_identification_number',
     ];
 
     // Beziehung: Eine Firma kann mehrere Rechnungen haben
