@@ -21,9 +21,9 @@ export const generateCertificatePDF = (data: CertificateData) => {
     const workDate = dayjs(data.work_date).format('DD.MM.YYYY');
     
     // Farben definieren
-    const primaryColor = [37, 99, 235]; // Indigo
-    const textColor = [51, 51, 51]; // Dark gray
-    const lightGray = [241, 245, 249]; // Light gray background
+    const primaryColor: [number, number, number] = [37, 99, 235]; // Indigo
+    const textColor: [number, number, number] = [51, 51, 51]; // Dark gray
+    const lightGray: [number, number, number] = [241, 245, 249]; // Light gray background
     
     // PDF-Einstellungen
     doc.setProperties({
@@ -34,7 +34,7 @@ export const generateCertificatePDF = (data: CertificateData) => {
     });
 
     // Header mit Firmenlogo-Style
-    doc.setFillColor(...primaryColor);
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(20, 20, 170, 25, 'F');
     
     // Firmenname
@@ -50,13 +50,13 @@ export const generateCertificatePDF = (data: CertificateData) => {
     doc.text('Telefon: 02381 / 27 95 644 | Handy: 0176 624 98101', 25, 47);
     
     // Titel
-    doc.setTextColor(...textColor);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('BESCHEINIGUNG', 105, 65, { align: 'center' });
     
     // Linie unter dem Titel
-    doc.setDrawColor(...primaryColor);
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setLineWidth(0.5);
     doc.line(20, 70, 190, 70);
     
@@ -66,9 +66,9 @@ export const generateCertificatePDF = (data: CertificateData) => {
     doc.text('Bescheinigt wird hiermit, dass', 25, 85);
     
     // Mitarbeiter-Info Box
-    doc.setFillColor(...lightGray);
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
     doc.rect(25, 90, 165, 35, 'F');
-    doc.setDrawColor(...primaryColor);
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setLineWidth(1);
     doc.rect(25, 90, 165, 35, 'S');
     
@@ -140,7 +140,7 @@ export const generateCertificatePDF = (data: CertificateData) => {
     doc.text(`Hamm, ${currentDate}`, 25, 220);
     
     // Linie für Unterschrift
-    doc.setDrawColor(...textColor);
+    doc.setDrawColor(textColor[0], textColor[1], textColor[2]);
     doc.setLineWidth(0.5);
     doc.line(120, 240, 190, 240);
     
@@ -208,9 +208,10 @@ export const generateCertificateAndUpload = async (data: CertificateData, employ
         }
     } catch (error) {
         console.error('Upload-Fehler:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         return {
             success: false,
-            error: error.message
+            error: errorMessage
         };
     }
 };

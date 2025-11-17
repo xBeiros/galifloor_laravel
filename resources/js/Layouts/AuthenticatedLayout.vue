@@ -11,7 +11,8 @@ import { Link } from '@inertiajs/vue3';
 import { GlobeAltIcon, SunIcon, MoonIcon } from '@heroicons/vue/24/outline';
 import { useDarkMode } from '@/Composables/useDarkMode';
 
-const { t, locale: currentLocale } = useI18n();
+const { t, locale } = useI18n();
+const currentLocale = locale;
 const { isDark, toggleDarkMode } = useDarkMode();
 const showingNavigationDropdown = ref(false);
 
@@ -122,7 +123,7 @@ const switchLanguage = (langCode: string) => {
                                             @click="switchLanguage(lang.code)"
                                             :class="[
                                                 'block w-full text-left px-4 py-2 text-sm leading-5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700 transition duration-150 ease-in-out',
-                                                { 'bg-gray-100 dark:bg-gray-700': lang.code === currentLocale.value }
+                                                { 'bg-gray-100 dark:bg-gray-700': lang.code === currentLocale }
                                             ]"
                                         >
                                             <span class="me-2">{{ lang.flag }}</span>
