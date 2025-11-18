@@ -36,7 +36,7 @@ class PerformanceController extends Controller
             'qm' => 'required|numeric',
             'price' => 'required|numeric',
             'flatrate' => 'boolean',
-            'status' => 'in:no_change,date_change,canceled',
+            'status' => 'in:no_change,date_change,canceled,modified',
             'multiple_days' => 'boolean',
         ]);
         
@@ -105,7 +105,7 @@ class PerformanceController extends Controller
     {
         $request->validate([
             'date_changed_to' => 'required|date',
-            'status' => 'in:no_change,date_change,canceled',
+            'status' => 'in:no_change,date_change,canceled,modified',
         ]);
 
         $performance = Performance::find($id);
@@ -128,7 +128,7 @@ class PerformanceController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:no_change,date_change,canceled',
+            'status' => 'required|in:no_change,date_change,canceled,modified',
         ]);
 
         $performance = Performance::find($id);
@@ -137,9 +137,57 @@ class PerformanceController extends Controller
             return response()->json(['message' => 'Performance nicht gefunden'], 404);
         }
 
-        $performance->update(['status' => $request->status]);
+        $invoice = $performance->invoice;
+        $newStatus = $request->status;
 
-        return response()->json($performance);
+        // Wenn Status auf 'no_change' gesetzt wird (Wiederherstellung von 'canceled')
+        // und die Rechnung bereits ausgestellt wurde und modified_after_issue true ist,
+        // dann setze Status auf 'modified' statt 'no_change'
+        if ($newStatus === 'no_change' && $invoice->issued_at !== null && $performance->modified_after_issue) {
+            $newStatus = 'modified';
+        }
+
+        $performance->update(['status' => $newStatus]);
+
+        return response()->json($performance->fresh());
+    }
+
+    /**
+     * QM und Preis einer Leistung aktualisieren.
+     */
+    public function updateQmAndPrice(Request $request, $id)
+    {
+        $request->validate([
+            'qm' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        $performance = Performance::findOrFail($id);
+        $invoice = $performance->invoice;
+
+        // Prüfe, ob die Rechnung bereits ausgestellt wurde
+        $modifiedAfterIssue = $invoice->issued_at !== null;
+
+        // Bestimme den neuen Status
+        // Wenn Rechnung bereits ausgestellt wurde, setze Status auf 'modified' und modified_after_issue auf true
+        // Wenn nicht ausgestellt, behalte den aktuellen Status (außer 'canceled') und setze modified_after_issue auf false
+        $newStatus = $performance->status;
+        if ($modifiedAfterIssue && $performance->status !== 'canceled') {
+            $newStatus = 'modified';
+        }
+
+        $performance->update([
+            'qm' => (int) $request->qm,
+            'price' => $request->price,
+            'modified_after_issue' => $modifiedAfterIssue,
+            'status' => $newStatus,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'performance' => $performance->fresh(),
+            'modified_after_issue' => $modifiedAfterIssue
+        ]);
     }
 
 }

@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { 
     BuildingOfficeIcon, 
     MapPinIcon, 
@@ -8,9 +9,12 @@ import {
     HashtagIcon,
     UserIcon,
     PhoneIcon,
-    UsersIcon
+    UsersIcon,
+    PencilIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline';
 import { Link } from '@inertiajs/vue3';
+import { Dialog, DialogPanel, TransitionRoot } from '@headlessui/vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -20,6 +24,87 @@ const props = defineProps({
     employees: Array
 });
 
+const showEditModal = ref(false);
+const companyData = ref({ ...props.ownCompany });
+
+const editForm = useForm({
+    name: props.ownCompany?.name || '',
+    address: props.ownCompany?.address || '',
+    postal: props.ownCompany?.postal || '',
+    city: props.ownCompany?.city || '',
+    owner_name: props.ownCompany?.owner_name || '',
+    represented_by: props.ownCompany?.represented_by || '',
+    email: props.ownCompany?.email || '',
+    email_secondary: props.ownCompany?.email_secondary || '',
+    phone: props.ownCompany?.phone || '',
+    tax_identification_number: props.ownCompany?.tax_identification_number || '',
+    image: null
+});
+
+const openEditModal = () => {
+    editForm.name = companyData.value?.name || props.ownCompany?.name || '';
+    editForm.address = companyData.value?.address || props.ownCompany?.address || '';
+    editForm.postal = companyData.value?.postal || props.ownCompany?.postal || '';
+    editForm.city = companyData.value?.city || props.ownCompany?.city || '';
+    editForm.owner_name = companyData.value?.owner_name || props.ownCompany?.owner_name || '';
+    editForm.represented_by = companyData.value?.represented_by || props.ownCompany?.represented_by || '';
+    editForm.email = companyData.value?.email || props.ownCompany?.email || '';
+    editForm.email_secondary = companyData.value?.email_secondary || props.ownCompany?.email_secondary || '';
+    editForm.phone = companyData.value?.phone || props.ownCompany?.phone || '';
+    editForm.tax_identification_number = companyData.value?.tax_identification_number || props.ownCompany?.tax_identification_number || '';
+    editForm.image = null;
+    showEditModal.value = true;
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+};
+
+const handleImageUpload = (event) => {
+    const target = event.target;
+    if (target.files && target.files[0]) {
+        editForm.image = target.files[0];
+    }
+};
+
+const updateCompany = () => {
+    const formData = new FormData();
+    
+    Object.keys(editForm.data()).forEach(key => {
+        const value = editForm.data()[key];
+        if (value !== null && value !== undefined) {
+            formData.append(key, value);
+        }
+    });
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+        formData.append('_token', csrfToken);
+    }
+    
+    formData.append('_method', 'PUT');
+    
+    fetch(route('company.details.update'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.ownCompany) {
+            Object.assign(companyData.value, data.ownCompany);
+            closeEditModal();
+            router.reload({ only: ['ownCompany'] });
+        }
+    })
+    .catch(error => {
+        console.error('Update error:', error);
+    });
+};
+
 const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -28,15 +113,31 @@ const formatDate = (dateString) => {
         day: '2-digit'
     });
 };
+
+const getImageSrc = () => {
+    if (companyData.value?.image_url) {
+        return companyData.value.image_url;
+    }
+    return null;
+};
 </script>
 
 <template>
     <Head :title="t('company.show_all.title')" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                {{ t('company.show_all.title') }}
-            </h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                    {{ t('company.show_all.title') }}
+                </h2>
+                <button 
+                    @click="openEditModal"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    <PencilIcon class="h-5 w-5 mr-2" />
+                    {{ t('company.show_all.edit') }}
+                </button>
+            </div>
         </template>
 
         <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -47,19 +148,19 @@ const formatDate = (dateString) => {
                         <div class="flex items-center space-x-4 sm:space-x-6">
                             <div class="relative flex-shrink-0">
                                 <img 
-                                    v-if="ownCompany?.image_url" 
-                                    :src="ownCompany.image_url" 
+                                    v-if="getImageSrc() || companyData?.image_url" 
+                                    :src="getImageSrc() || companyData?.image_url" 
                                     alt="Firmenlogo" 
-                                    class="w-16 h-16 sm:w-24 sm:h-24 object-contain rounded-lg border-4 border-white shadow-lg"
+                                    class="w-16 h-16 sm:w-24 sm:h-24 object-contain rounded-lg border-4 border-white dark:border-gray-800 shadow-lg"
                                 />
                                 <div v-else class="w-16 h-16 sm:w-24 sm:h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                                     <BuildingOfficeIcon class="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 dark:text-gray-500" />
                                 </div>
                             </div>
                             <div>
-                                <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ ownCompany?.name || 'Gali Floor' }}</h3>
+                                <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ companyData?.name || ownCompany?.name || 'Gali Floor' }}</h3>
                                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ ownCompany?.address || 'Josefstr. 1' }}, {{ ownCompany?.postal || '59067' }} {{ ownCompany?.city || 'Hamm' }}
+                                    {{ companyData?.address || ownCompany?.address || 'Josefstr. 1' }}, {{ companyData?.postal || ownCompany?.postal || '59067' }} {{ companyData?.city || ownCompany?.city || 'Hamm' }}
                                 </p>
                             </div>
                         </div>
@@ -74,28 +175,28 @@ const formatDate = (dateString) => {
                                 {{ t('company.show_all.contact_data') }}
                             </h4>
                             <div class="space-y-3">
-                                <div v-if="ownCompany?.email">
+                                <div v-if="companyData?.email || ownCompany?.email">
                                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.email') }}</label>
                                     <p class="text-sm text-gray-900 dark:text-white font-medium flex items-center mt-1">
                                         <EnvelopeIcon class="w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" />
-                                        {{ ownCompany.email }}
+                                        {{ companyData?.email || ownCompany?.email }}
                                     </p>
                                 </div>
-                                <div v-if="ownCompany?.email_secondary">
-                                    <label class="text-xs font-medium text-gray-500">{{ t('company.show_all.email_secondary') }}</label>
-                                    <p class="text-sm text-gray-900 font-medium flex items-center mt-1">
-                                        <EnvelopeIcon class="w-4 h-4 mr-1 text-gray-400" />
-                                        {{ ownCompany.email_secondary }}
+                                <div v-if="companyData?.email_secondary || ownCompany?.email_secondary">
+                                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.email_secondary') }}</label>
+                                    <p class="text-sm text-gray-900 dark:text-white font-medium flex items-center mt-1">
+                                        <EnvelopeIcon class="w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" />
+                                        {{ companyData?.email_secondary || ownCompany?.email_secondary }}
                                     </p>
                                 </div>
-                                <div v-if="ownCompany?.phone">
+                                <div v-if="companyData?.phone || ownCompany?.phone">
                                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.phone') }}</label>
                                     <p class="text-sm text-gray-900 dark:text-white font-medium flex items-center mt-1">
                                         <PhoneIcon class="w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" />
-                                        {{ ownCompany.phone }}
+                                        {{ companyData?.phone || ownCompany?.phone }}
                                     </p>
                                 </div>
-                                <div v-if="!ownCompany?.email && !ownCompany?.email_secondary && !ownCompany?.phone" class="text-xs text-gray-500 dark:text-gray-400 italic">
+                                <div v-if="!companyData?.email && !ownCompany?.email && !companyData?.email_secondary && !ownCompany?.email_secondary && !companyData?.phone && !ownCompany?.phone" class="text-xs text-gray-500 dark:text-gray-400 italic">
                                     {{ t('company.show_all.no_contact') }}
                                 </div>
                             </div>
@@ -111,20 +212,20 @@ const formatDate = (dateString) => {
                                 <div>
                                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.street') }}</label>
                                     <p class="text-sm text-gray-900 dark:text-white font-medium mt-1">
-                                        {{ ownCompany?.address || 'Josefstr. 1' }}
+                                        {{ companyData?.address || ownCompany?.address || 'Josefstr. 1' }}
                                     </p>
                                 </div>
                                 <div class="flex items-end gap-2">
                                     <div>
-                                        <label class="text-xs font-medium text-gray-500">{{ t('company.show_all.postal') }}</label>
-                                        <p class="text-sm text-gray-900 font-medium mt-1">
-                                            {{ ownCompany?.postal || '59067' }}
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.postal') }}</label>
+                                        <p class="text-sm text-gray-900 dark:text-white font-medium mt-1">
+                                            {{ companyData?.postal || ownCompany?.postal || '59067' }}
                                         </p>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-medium text-gray-500">{{ t('company.show_all.city') }}</label>
-                                        <p class="text-sm text-gray-900 font-medium mt-1">
-                                            {{ ownCompany?.city || 'Hamm' }}
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('company.show_all.city') }}</label>
+                                        <p class="text-sm text-gray-900 dark:text-white font-medium mt-1">
+                                            {{ companyData?.city || ownCompany?.city || 'Hamm' }}
                                         </p>
                                     </div>
                                 </div>
@@ -138,13 +239,13 @@ const formatDate = (dateString) => {
                                 {{ t('company.show_all.company_info') }}
                             </h4>
                             <div class="space-y-3">
-                                <div v-if="ownCompany?.tax_identification_number">
+                                <div v-if="companyData?.tax_identification_number || ownCompany?.tax_identification_number">
                                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
                                         <HashtagIcon class="w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" />
                                         {{ t('company.show_all.tax_id') }}
                                     </label>
                                     <p class="text-sm text-gray-900 dark:text-white font-medium mt-1 font-mono">
-                                        {{ ownCompany.tax_identification_number }}
+                                        {{ companyData?.tax_identification_number || ownCompany?.tax_identification_number }}
                                     </p>
                                 </div>
                                 <div v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
@@ -166,7 +267,7 @@ const formatDate = (dateString) => {
                                 <div class="space-y-3">
                                     <div>
                                         <p class="text-sm text-gray-900 dark:text-white font-medium">
-                                            {{ ownCompany?.owner_name || 'Stefan Asenov Rangelov' }}
+                                            {{ companyData?.owner_name || ownCompany?.owner_name || 'Stefan Asenov Rangelov' }}
                                         </p>
                                     </div>
                                 </div>
@@ -180,8 +281,8 @@ const formatDate = (dateString) => {
                                 </h4>
                                 <div class="space-y-3">
                                     <div>
-                                        <p class="text-sm text-gray-900 font-medium">
-                                            {{ ownCompany?.represented_by || 'Demet Güngör' }}
+                                        <p class="text-sm text-gray-900 dark:text-white font-medium">
+                                            {{ companyData?.represented_by || ownCompany?.represented_by || 'Demet Güngör' }}
                                         </p>
                                     </div>
                                 </div>
@@ -238,5 +339,104 @@ const formatDate = (dateString) => {
                 </div>
             </div>
         </div>
+
+        <!-- Edit Modal -->
+        <TransitionRoot as="template" :show="showEditModal">
+            <Dialog as="div" class="relative z-10" @close="closeEditModal">
+                <div class="fixed inset-0 bg-black/50 dark:bg-gray-900/75" />
+                <div class="fixed inset-0 flex items-center justify-center p-4">
+                    <DialogPanel class="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg sm:text-xl font-medium text-gray-900 dark:text-white">
+                                    {{ t('company.show_all.edit') }}
+                                </h3>
+                                <button @click="closeEditModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
+                                    <XMarkIcon class="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <form @submit.prevent="updateCompany" enctype="multipart/form-data" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Linke Spalte -->
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.title') }}</label>
+                                            <input v-model="editForm.name" type="text" required class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.street') }}</label>
+                                            <input v-model="editForm.address" type="text" required class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.postal') }}</label>
+                                                <input v-model="editForm.postal" type="text" required class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.city') }}</label>
+                                                <input v-model="editForm.city" type="text" required class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.email') }}</label>
+                                            <input v-model="editForm.email" type="email" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.email_secondary') }}</label>
+                                            <input v-model="editForm.email_secondary" type="email" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.phone') }}</label>
+                                            <input v-model="editForm.phone" type="text" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Rechte Spalte -->
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.tax_id') }}</label>
+                                            <input v-model="editForm.tax_identification_number" type="text" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.owner') }}</label>
+                                            <input v-model="editForm.owner_name" type="text" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.show_all.secretary') }}</label>
+                                            <input v-model="editForm.represented_by" type="text" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('company.index.modal.profile_image') }}</label>
+                                            <div class="mt-1 flex items-center">
+                                                <img v-if="getImageSrc() || companyData?.image_url" :src="getImageSrc() || companyData?.image_url" alt="Firmenlogo" class="w-24 h-24 object-contain rounded-lg mr-4 border border-gray-300 dark:border-gray-600" />
+                                                <input type="file" @change="handleImageUpload" accept="image/*" class="text-sm text-gray-500 dark:text-gray-400 file:border file:border-gray-300 dark:file:border-gray-600 file:rounded file:bg-gray-100 dark:file:bg-gray-700 file:text-gray-700 dark:file:text-gray-300" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <button type="button" @click="closeEditModal" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600">
+                                        {{ t('common.cancel') }}
+                                    </button>
+                                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 dark:bg-indigo-500 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600">
+                                        {{ t('common.save') }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+        </TransitionRoot>
     </AuthenticatedLayout>
 </template>

@@ -5,14 +5,20 @@
         "calendar": "Kalender",
         "companies": "Firmen",
         "company": "Firma",
-        "employees": "Mitarbeiter"
+        "employees": "Mitarbeiter",
+        "management": "Verwaltung",
+        "vehicles": "Fahrzeuge",
+        "documents": "Dokumente"
     },
     "common": {
         "profile": "Profil",
         "logout": "Abmelden",
         "language": "Sprache",
         "dark_mode": "Dunkelmodus",
-        "light_mode": "Hellmodus"
+        "light_mode": "Hellmodus",
+        "cancel": "Abbrechen",
+        "save": "Speichern",
+        "optional": "Optional"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -45,7 +51,11 @@
         },
         "show": {
             "title": "Auftrag",
+            "preview_invoice": "Rechnung Vorschau",
+            "issue_invoice": "Rechnung Ausstellen",
+            "confirm_issue": "Sind Sie sicher, dass Sie diese Rechnung ausstellen möchten? Nach dem Ausstellen kann die Rechnung heruntergeladen werden und das Datum wird festgeschrieben.",
             "download_invoice": "Rechnung Herunterladen",
+            "download_corrected_invoice": "Korrigierte Rechnung Herunterladen",
             "download_iveha": "IVEHA Auftrag Herunterladen",
             "options": "Optionen",
             "order_address": "Auftragsadresse",
@@ -68,6 +78,7 @@
     "company": {
         "show_all": {
             "title": "Meine Firma",
+            "edit": "Bearbeiten",
             "contact_data": "Kontaktdaten",
             "email": "E-Mail",
             "email_secondary": "E-Mail (weitere)",
@@ -108,7 +119,41 @@
                 "profile_image": "Profilbild",
                 "save": "Speichern"
             }
-        }
+        },
+        "show": {
+            "title": "Firmendetails",
+            "edit": "Bearbeiten",
+            "upload_document": "Dokument hochladen",
+            "company_info": "Firmen-Informationen",
+            "company_data": "Firmendaten",
+            "documents": "Dokumente",
+            "no_documents": "Keine Dokumente vorhanden"
+        },
+        "tax_identification_number": "Steuer-Identifikationsnummer",
+        "security_service": "Sicherheitsdienst",
+        "cash_discount": "Skonto"
+    },
+    "documents": {
+        "index": {
+            "title": "Dokumentenverwaltung",
+            "add_document": "Dokument hinzufügen",
+            "no_documents": "Keine Dokumente vorhanden",
+            "download": "Herunterladen",
+            "edit": "Bearbeiten",
+            "delete": "Löschen",
+            "upload_modal": {
+                "title": "Neues Dokument",
+                "name": "Name",
+                "category": "Kategorie",
+                "description": "Beschreibung",
+                "file": "Datei"
+            },
+            "edit_modal": {
+                "title": "Dokument bearbeiten",
+                "new_file": "Neue Datei"
+            }
+        },
+        "confirm_delete": "Möchten Sie dieses Dokument wirklich löschen?"
     },
     "employee": {
         "index": {
@@ -117,6 +162,8 @@
             "add": "Mitarbeiter hinzufügen",
             "birth_date": "Geburtsdatum",
             "status": "Status",
+            "search_placeholder": "Mitarbeiter suchen...",
+            "no_results": "Keine Mitarbeiter gefunden",
             "modal": {
                 "title": "Neuer Mitarbeiter",
                 "first_name": "Vorname",
@@ -268,13 +315,59 @@
         "end_date_required": "Enddatum ist erforderlich",
         "end_date_after_start": "Enddatum muss nach Startdatum sein",
         "change_date": "Datum ändern",
+        "edit_qm_price": "QM und Preis bearbeiten",
+        "modified_after_issue_warning": "Hinweis: Diese Rechnung wurde bereits ausgestellt. Die Änderung wird als 'Korrigierte Rechnung' markiert.",
+        "confirm_cancel": "Möchten Sie diese Leistung wirklich stornieren?",
+        "confirm_delete": "Möchten Sie diese Leistung wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm_restore": "Möchten Sie diese Leistung wirklich wiederherstellen?",
+        "confirm_date_change": "Möchten Sie das Datum dieser Leistung wirklich ändern?",
+        "confirm_qm_price_change": "Möchten Sie QM und Preis dieser Leistung wirklich ändern?",
         "cancel": "Abbrechen",
         "save": "Speichern",
         "status_map": {
             "canceled": "Storniert",
             "date_change": "Termin Verschoben",
             "no_change": "Keine Veränderung",
+            "modified": "Geändert",
             "unknown": "Unbekannt"
+        }
+    },
+    "vehicle": {
+        "license_plate": "Kennzeichen",
+        "vehicle_identification_number": "Fahrzeugidentifikationsnummer",
+        "status": "Status",
+        "notes": "Notizen",
+        "index": {
+            "title": "Fahrzeugverwaltung",
+            "list": "Fahrzeugliste",
+            "add": "Fahrzeug hinzufügen",
+            "search_placeholder": "Fahrzeuge suchen...",
+            "no_results": "Keine Fahrzeuge gefunden",
+            "modal": {
+                "title": "Neues Fahrzeug",
+                "image": "Bild (optional)",
+                "cancel": "Abbrechen",
+                "save": "Speichern"
+            }
+        },
+        "show": {
+            "title": "Fahrzeugdetails",
+            "edit": "Bearbeiten",
+            "upload_document": "Dokument hochladen",
+            "vehicle_info": "Fahrzeug-Informationen",
+            "vehicle_data": "Fahrzeugdaten",
+            "documents": "Dokumente",
+            "no_documents": "Keine Dokumente vorhanden",
+            "status_map": {
+                "registered": "Angemeldet",
+                "unregistered": "Abgemeldet",
+                "sold": "Verkauft"
+            }
+        },
+        "status_map": {
+            "registered": "Angemeldet",
+            "unregistered": "Abgemeldet",
+            "sold": "Verkauft"
         }
     }
 }

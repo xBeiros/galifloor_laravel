@@ -3,10 +3,12 @@
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\VehicleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -95,16 +97,24 @@ Route::get('/invoices', function () {
     return Inertia::render('Invoice/Index');
 })->middleware(['auth', 'verified'])->name('invoices');
 
-Route::get('/companies', function () {
-    return Inertia::render('Company/Index');
-})->middleware(['auth', 'verified'])->name('companies');
+Route::get('/companies', [CompanyController::class, 'index'])->middleware(['auth', 'verified'])->name('companies');
+Route::get('/company/details', [CompanyController::class, 'showAll'])->middleware(['auth', 'verified'])->name('company.details');
+Route::put('/company/details', [CompanyController::class, 'updateOwnCompany'])->middleware(['auth', 'verified'])->name('company.details.update');
+Route::get('/company/{company}', [CompanyController::class, 'show'])->middleware(['auth', 'verified'])->name('companies.show');
+Route::put('/company/{company}', [CompanyController::class, 'update'])->middleware(['auth', 'verified'])->name('companies.update');
+Route::post('/company/{company}/upload-document', [CompanyController::class, 'uploadDocument'])->middleware(['auth', 'verified'])->name('company.upload-document');
+Route::delete('/company/document/{document}', [CompanyController::class, 'deleteDocument'])->middleware(['auth', 'verified'])->name('company.delete-document');
 
-Route::get('/company/details', [CompanyController::class, 'showAll'])
-    ->middleware(['auth', 'verified'])
-    ->name('company.details');
+// Dokumentenverwaltung
+Route::get('/documents', [DocumentController::class, 'index'])->middleware(['auth', 'verified'])->name('documents.index');
+Route::post('/documents', [DocumentController::class, 'store'])->middleware(['auth', 'verified'])->name('documents.store');
+Route::put('/documents/{document}', [DocumentController::class, 'update'])->middleware(['auth', 'verified'])->name('documents.update');
+Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->middleware(['auth', 'verified'])->name('documents.destroy');
+Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->middleware(['auth', 'verified'])->name('documents.download');
 
-Route::get('/invoice/{invoice}', [InvoiceController::class, 'show'])->name('invoice.show');
-Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
+Route::get('/invoice/{invoice}', [InvoiceController::class, 'show'])->middleware(['auth', 'verified'])->name('invoice.show');
+Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->middleware(['auth', 'verified']);
+Route::post('/invoice/{invoice}/issue', [InvoiceController::class, 'issueInvoice'])->middleware(['auth', 'verified'])->name('invoice.issue');
 Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
 Route::post('/upload', [AssetController::class, 'store']);
 Route::middleware('auth')->group(function () {
@@ -133,6 +143,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Bescheinigungs-Routen für Mitarbeiter (jetzt clientseitig mit jsPDF)
     // Route::post('/employee/{employee}/create-certificate', [App\Http\Controllers\CertificateController::class, 'create'])->name('employee.create-certificate');
     // Route::get('/certificate-types', [App\Http\Controllers\CertificateController::class, 'getCertificateTypes'])->name('certificate.types');
+    
+    // Fahrzeuge-Routen
+    Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
+    Route::get('/vehicle/{vehicle}', [VehicleController::class, 'show'])->name('vehicles.show');
+    Route::post('/vehicles', [VehicleController::class, 'store'])->name('vehicles.store');
+    Route::put('/vehicle/{vehicle}', [VehicleController::class, 'update'])->name('vehicles.update');
+    Route::delete('/vehicle/{vehicle}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');
+    Route::post('/vehicle/{vehicle}/upload-document', [VehicleController::class, 'uploadDocument'])->name('vehicle.upload-document');
+    Route::delete('/vehicle/document/{document}', [VehicleController::class, 'deleteDocument'])->name('vehicle.delete-document');
 });
 
 

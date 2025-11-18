@@ -18,7 +18,14 @@ class Invoice extends Model
         'postal',
         'status',
         'start_date',
-        'end_date'
+        'end_date',
+        'issued_at'
+    ];
+
+    protected $casts = [
+        'issued_at' => 'datetime',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public static function boot()

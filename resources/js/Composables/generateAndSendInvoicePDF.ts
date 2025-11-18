@@ -3,12 +3,16 @@ import logo from "@/Assets/img.png";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import weekOfYear from "dayjs/plugin/weekOfYear";
+import "dayjs/locale/de";
 import axios from "axios";
 dayjs.extend(weekOfYear);
+dayjs.locale('de');
 
 export const generateInvoiceAndSend = async (orderr: any) =>{
     const doc = new jsPDF();
-    const aktuellesDatum = dayjs().format("DD.MM.YYYY");
+    // Verwende das Ausstellungsdatum, falls vorhanden, sonst aktuelles Datum
+    const invoiceDate = orderr?.issued_at ? dayjs(orderr.issued_at) : dayjs();
+    const aktuellesDatum = invoiceDate.format("DD.MM.YYYY");
     const order = orderr
     doc.setTextColor(81,82,84);
     const logoUrl = logo; // Ersetze dies mit deinem Bildpfad
@@ -41,35 +45,72 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     doc.setTextColor(81,82,84);
     doc.setFontSize(10);
     doc.text("Hamm, " + aktuellesDatum, 175, 60, { align: "right" });
+    
+    // Prüfe, ob Leistungen nach Ausstellung geändert wurden (vor Vorschau-Hinweis)
+    // Prüfe sowohl auf true (boolean) als auch auf 1 (integer) und "1" (string)
+    const hasModifiedAfterIssue = order.performances && order.performances.some((p: any) => {
+        return p.modified_after_issue === true || p.modified_after_issue === 1 || p.modified_after_issue === "1";
+    });
+    const isCanceled = order.status === 'canceled';
+    
+    // Startposition für Bauvorhaben dynamisch anpassen
+    let bauvorhabenStartY = 70;
+    let noticeY = 67; // Y-Position für Hinweise
+    
+    // Storniert-Hinweis (höchste Priorität, wenn Rechnung storniert ist)
+    if (isCanceled) {
+        doc.setFontSize(12);
+        doc.setTextColor(255, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.text("STORNIERT", 105, noticeY, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(81,82,84);
+        bauvorhabenStartY = 75; // Mehr Platz für Storniert-Hinweis
+        noticeY += 5; // Nächste Zeile für weitere Hinweise
+    }
+    
+    // Korrigierte Rechnung Hinweis (nur wenn nicht storniert und geändert)
+    if (hasModifiedAfterIssue && !isCanceled) {
+        doc.setFontSize(10);
+        doc.setTextColor(255, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.text("Korrigierte Rechnung", 17, noticeY);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(81,82,84);
+        if (bauvorhabenStartY === 70) {
+            bauvorhabenStartY = 75; // Mehr Platz für Korrigiert-Hinweis
+        }
+    }
 
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold");
-    doc.text("Bauvorhaben:", 15, 70);
-    doc.text("Projekt Nr. ", 50, 70);
+    doc.text("Bauvorhaben:", 15, bauvorhabenStartY);
+    doc.text("Projekt Nr. ", 50, bauvorhabenStartY);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0,0,155);
-    doc.text(order.project_number, 65, 70);
+    doc.text(order.project_number, 65, bauvorhabenStartY);
     doc.setTextColor(81,82,84);
     doc.setFont("helvetica", "bold");
-    doc.text("Anschrift:", 15, 73);
+    doc.text("Anschrift:", 15, bauvorhabenStartY + 3);
     doc.setFont("helvetica", "normal");
-    doc.text(order.construction, 15, 75.5);
-    doc.text(order.address, 15, 78.5);
-    doc.text(order.postal + " " + order.city, 15, 81.5);
+    doc.text(order.construction, 15, bauvorhabenStartY + 5.5);
+    doc.text(order.address, 15, bauvorhabenStartY + 8.5);
+    doc.text(order.postal + " " + order.city, 15, bauvorhabenStartY + 11.5);
 
-    // Tabelle
+    // Tabelle - Startposition dynamisch anpassen
+    const tableStartY = bauvorhabenStartY + 15; // Abstand nach Anschrift
     doc.setFillColor(220, 230, 255); // Hellblauer Hintergrund
-    doc.rect(15, 90, 180, 5, "F");
+    doc.rect(15, tableStartY, 180, 5, "F");
     doc.setFontSize(8);
-    doc.text("qm", 16, 93);
-    doc.text("Bezeichnung", 30, 93);
-    doc.text("Fixpreis | m²-Preis", 150, 93);
-    doc.text("Preis", 190, 93, { align: "right" });
+    doc.text("qm", 16, tableStartY + 3);
+    doc.text("Bezeichnung", 30, tableStartY + 3);
+    doc.text("Fixpreis | m²-Preis", 150, tableStartY + 3);
+    doc.text("Preis", 190, tableStartY + 3, { align: "right" });
 
-    doc.line(15, 95, 195, 95);
+    doc.line(15, tableStartY + 5, 195, tableStartY + 5);
 
     let totalAmount = 0;
-    let y = 100;
+    let y = tableStartY + 10;
 
     for (let i = 0; i < order.performances.length; i++) {
         const performance = order.performances[i];

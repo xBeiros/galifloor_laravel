@@ -54,6 +54,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::delete('/performances/{id}', [PerformanceController::class, 'destroy']);
     Route::patch('/performances/{id}/status', [PerformanceController::class, 'updateStatus']);
     Route::patch('/performances/{id}/date', [PerformanceController::class, 'updateDate']);
+    Route::patch('/performances/{id}/qm-price', [PerformanceController::class, 'updateQmAndPrice']);
 });
 
 Route::middleware('auth:sanctum')->post('/performances', [PerformanceController::class, 'store']);

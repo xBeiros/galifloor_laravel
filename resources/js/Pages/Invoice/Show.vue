@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { defineProps, computed, ref } from 'vue';
 import { MenuButton, MenuItem, MenuItems, Menu } from '@headlessui/vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -40,12 +40,61 @@ function toggleDropdown() {
     isOpen.value = !isOpen.value;
 }
 
-const generateInvoicePDF = () => {
-    console.log(props.invoice);
-    generateInvoice(props.invoice);
+const issueInvoice = () => {
+    // Bestätigungsabfrage
+    if (!confirm(t('invoices.show.confirm_issue'))) {
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch(route('invoice.issue', props.invoice.id), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Invoice-Daten aktualisieren
+            props.invoice.issued_at = data.invoice.issued_at;
+            router.reload({ only: ['invoice'] });
+        } else {
+            alert(data.message || 'Fehler beim Ausstellen der Rechnung');
+        }
+    })
+    .catch(error => {
+        console.error('Fehler beim Ausstellen der Rechnung:', error);
+    });
 };
 
+const previewInvoice = () => {
+    if (props.invoice.issued_at) {
+        alert('Diese Rechnung wurde bereits ausgestellt. Bitte verwenden Sie die Download-Funktion.');
+        return;
+    }
+    console.log(props.invoice);
+    generateInvoice(props.invoice, true);
+};
+
+const generateInvoicePDF = () => {
+    if (!props.invoice.issued_at) {
+        alert('Bitte stellen Sie die Rechnung zuerst aus.');
+        return;
+    }
+    console.log(props.invoice);
+    generateInvoice(props.invoice, false);
+};
+
+
 const sendInvoice = () => {
+    if (!props.invoice.issued_at) {
+        alert('Bitte stellen Sie die Rechnung zuerst aus.');
+        return;
+    }
     generateInvoiceAndSend(props.invoice);
 };
 
@@ -111,11 +160,42 @@ function updateStatus(newStatus) {
                 </div>
 
                 <div class="w-full md:w-60">
-                    <div class="w-full">
-                        <button @click="generateInvoicePDF()" type="button" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    <div class="w-full space-y-2">
+                        <!-- Rechnung Vorschau Button (nur wenn noch nicht ausgestellt) -->
+                        <button 
+                            v-if="!invoice?.issued_at" 
+                            @click="previewInvoice()" 
+                            type="button" 
+                            class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-blue-600 dark:bg-blue-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 dark:hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                        >
+                            {{ t('invoices.show.preview_invoice') }}
+                        </button>
+                        
+                        <!-- Rechnung ausstellen Button (nur wenn noch nicht ausgestellt) -->
+                        <button 
+                            v-if="!invoice?.issued_at" 
+                            @click="issueInvoice()" 
+                            type="button" 
+                            class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-green-600 dark:bg-green-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 dark:hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                        >
+                            {{ t('invoices.show.issue_invoice') }}
+                        </button>
+                        
+                        <!-- Rechnung herunterladen Button (nur wenn ausgestellt) -->
+                        <button 
+                            v-if="invoice?.issued_at" 
+                            @click="generateInvoicePDF()" 
+                            type="button" 
+                            class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 dark:bg-indigo-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
                             {{ t('invoices.show.download_invoice') }}
                         </button>
-                        <button v-if="invoice?.status === 'completed'" @click="generateInvoicePDF()" type="button" class="mt-1 inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        <button 
+                            v-if="invoice?.status === 'completed' && invoice?.issued_at" 
+                            @click="generateInvoicePDF()" 
+                            type="button" 
+                            class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 dark:bg-indigo-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
                             {{ t('invoices.show.download_iveha') }}
                         </button>
                     </div>
@@ -184,7 +264,7 @@ function updateStatus(newStatus) {
                 </div>
             </div>
 
-            <PerformanceTable :order="invoice?.performances" :order_number="invoice?.order_number" />
+            <PerformanceTable :order="invoice?.performances" :order_number="invoice?.order_number" :invoice="invoice" />
 
             <div class="mt-6">
                 <h2 class="text-xl mt-4 text-gray-900 dark:text-white">{{ t('invoices.show.uploaded_files') }}</h2>

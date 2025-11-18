@@ -8,7 +8,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
-import { GlobeAltIcon, SunIcon, MoonIcon } from '@heroicons/vue/24/outline';
+import { GlobeAltIcon, SunIcon, MoonIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import { useDarkMode } from '@/Composables/useDarkMode';
 
 const { t, locale } = useI18n();
@@ -20,9 +20,14 @@ const navigationLinks = computed(() => [
     { name: t('nav.dashboard'), route: 'dashboard' },
     { name: t('nav.invoices'), route: 'invoices' },
     { name: t('nav.calendar'), route: 'calendar' },
-    { name: t('nav.companies'), route: 'companies' },
+    { name: t('nav.companies'), route: 'companies' }
+]);
+
+const managementMenuItems = computed(() => [
+    { name: t('nav.employees'), route: 'employees.index' },
+    { name: t('nav.vehicles'), route: 'vehicles.index' },
     { name: t('nav.company'), route: 'company.details' },
-    { name: t('nav.employees'), route: 'employees.index' }
+    { name: t('nav.documents'), route: 'documents.index' }
 ]);
 
 const languages = [
@@ -63,7 +68,7 @@ const switchLanguage = (langCode: string) => {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex items-center">
                                 <NavLink
                                     v-for="link in navigationLinks"
                                     :key="link.route"
@@ -72,6 +77,46 @@ const switchLanguage = (langCode: string) => {
                                 >
                                     {{ link.name }}
                                 </NavLink>
+                                
+                                <!-- Verwaltung Dropdown -->
+                                <div class="relative inline-flex">
+                                    <Dropdown align="left" width="48">
+                                        <template #trigger>
+                                            <span
+                                                :class="[
+                                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none cursor-pointer',
+                                                    route().current('employees.index') || route().current('vehicles.index') || route().current('company.details') || route().current('documents.index')
+                                                        ? 'border-indigo-400 dark:border-indigo-500 text-gray-900 dark:text-white focus:border-indigo-700 dark:focus:border-indigo-400'
+                                                        : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 focus:text-gray-700 dark:focus:text-white focus:border-gray-300 dark:focus:border-gray-600'
+                                                ]"
+                                            >
+                                                {{ t('nav.management') }}
+                                                <svg
+                                                    class="-me-0.5 ms-1 h-4 w-4"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
+                                                    <path
+                                                        fill-rule="evenodd"
+                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd"
+                                                    />
+                                                </svg>
+                                            </span>
+                                        </template>
+
+                                        <template #content>
+                                            <DropdownLink
+                                                v-for="item in managementMenuItems"
+                                                :key="item.route"
+                                                :href="route(item.route)"
+                                            >
+                                                {{ item.name }}
+                                            </DropdownLink>
+                                        </template>
+                                    </Dropdown>
+                                </div>
                             </div>
                         </div>
 
@@ -238,6 +283,22 @@ const switchLanguage = (langCode: string) => {
                         >
                             {{ link.name }}
                         </ResponsiveNavLink>
+                        
+                        <!-- Verwaltung Dropdown für Mobile -->
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                            <div class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {{ t('nav.management') }}
+                            </div>
+                            <ResponsiveNavLink
+                                v-for="item in managementMenuItems"
+                                :key="item.route"
+                                :href="route(item.route)"
+                                :active="route().current(item.route)"
+                                class="pl-8"
+                            >
+                                {{ item.name }}
+                            </ResponsiveNavLink>
+                        </div>
                     </div>
 
                     <!-- Responsive Settings Options -->

@@ -26,4 +26,10 @@ class Company extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    // Beziehung: Eine Firma kann mehrere Dokumente haben
+    public function documents()
+    {
+        return $this->hasMany(CompanyDocument::class);
+    }
 }

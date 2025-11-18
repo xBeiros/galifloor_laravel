@@ -74,10 +74,15 @@ export const usePerformanceStore = defineStore('performanceStore', {
                     status: newStatus,
                 });
 
-                // Performance in Store aktualisieren
+                // Performance in Store aktualisieren mit dem tatsächlichen Status vom Backend
+                // (kann sich von newStatus unterscheiden, z.B. wenn 'no_change' zu 'modified' wird)
                 const index = this.performances.findIndex(p => p.id === id);
-                if (index !== -1) {
-                    this.performances[index].status = newStatus;
+                if (index !== -1 && response.data) {
+                    this.performances[index].status = response.data.status || newStatus;
+                    // Aktualisiere auch modified_after_issue, falls vorhanden
+                    if (response.data.modified_after_issue !== undefined) {
+                        this.performances[index].modified_after_issue = response.data.modified_after_issue;
+                    }
                 }
 
                 return response.data;

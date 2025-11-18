@@ -5,14 +5,32 @@
             <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">{{ t('employee.index.title') }}</h2>
         </template>
 
-        <div class="mt-4 flex justify-between items-center">
+        <div class="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('employee.index.list') }}</h1>
-            <button @click="open = true" class="bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-500 dark:hover:bg-indigo-600">{{ t('employee.index.add') }}</button>
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <!-- Suchfeld -->
+                <div class="relative flex-1 sm:flex-initial sm:w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        :placeholder="t('employee.index.search_placeholder')"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                </div>
+                <button @click="open = true" class="bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-500 dark:hover:bg-indigo-600 whitespace-nowrap">{{ t('employee.index.add') }}</button>
+            </div>
+        </div>
+
+        <div v-if="filteredEmployees.length === 0" class="mt-6 text-center py-12">
+            <p class="text-gray-500 dark:text-gray-400">{{ t('employee.index.no_results') }}</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             <div
-                v-for="employee in employees"
+                v-for="employee in filteredEmployees"
                 :key="employee.id"
                 @click="goToEmployee(employee.id)"
                 class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow dark:shadow-gray-900 hover:shadow-lg dark:hover:shadow-gray-800 cursor-pointer bg-white dark:bg-gray-800"
@@ -71,10 +89,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { useForm, router, Head } from '@inertiajs/vue3';
 import { Dialog, DialogPanel, TransitionRoot } from '@headlessui/vue';
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 import axios from 'axios';
 import { useI18n } from 'vue-i18n';
 
@@ -85,12 +104,34 @@ const props = defineProps({
 });
 
 const open = ref(false);
+const searchQuery = ref('');
+
 const statusMap = {
     active: t('employee.index.status_map.active'),
     fired: t('employee.index.status_map.fired'),
     sick: t('employee.index.status_map.sick'),
     vacation: t('employee.index.status_map.vacation'),
 };
+
+const filteredEmployees = computed(() => {
+    if (!searchQuery.value.trim()) {
+        return props.employees;
+    }
+    
+    const query = searchQuery.value.toLowerCase().trim();
+    return props.employees.filter(employee => {
+        const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
+        return (
+            fullName.includes(query) ||
+            employee.first_name?.toLowerCase().includes(query) ||
+            employee.last_name?.toLowerCase().includes(query) ||
+            employee.email?.toLowerCase().includes(query) ||
+            employee.phone?.toLowerCase().includes(query) ||
+            employee.birth_date?.includes(query) ||
+            statusMap[employee.status]?.toLowerCase().includes(query)
+        );
+    });
+});
 
 const form = useForm({
     first_name: '',

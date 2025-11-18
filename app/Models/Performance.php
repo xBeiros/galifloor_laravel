@@ -18,7 +18,12 @@ class Performance extends Model
         'qm',
         'price',
         'flatrate',
-        'status'
+        'status',
+        'modified_after_issue'
+    ];
+
+    protected $casts = [
+        'modified_after_issue' => 'boolean',
     ];
 
     public function invoice()

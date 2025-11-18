@@ -5,14 +5,20 @@
         "calendar": "Takvim",
         "companies": "Şirketler",
         "company": "Şirket",
-        "employees": "Çalışanlar"
+        "employees": "Çalışanlar",
+        "management": "Yönetim",
+        "vehicles": "Araçlar",
+        "documents": "Dokümanlar"
     },
     "common": {
         "profile": "Profil",
         "logout": "Çıkış Yap",
         "language": "Dil",
         "dark_mode": "Karanlık Mod",
-        "light_mode": "Aydınlık Mod"
+        "light_mode": "Aydınlık Mod",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "optional": "İsteğe Bağlı"
     },
     "dashboard": {
         "title": "Kontrol Paneli",
@@ -45,7 +51,11 @@
         },
         "show": {
             "title": "Sipariş",
+            "preview_invoice": "Fatura Önizleme",
+            "issue_invoice": "Fatura Düzenle",
+            "confirm_issue": "Bu faturayı düzenlemek istediğinizden emin misiniz? Düzenlendikten sonra fatura indirilebilir ve tarih sabitlenir.",
             "download_invoice": "Faturayı İndir",
+            "download_corrected_invoice": "Düzeltilmiş Fatura İndir",
             "download_iveha": "IVEHA Siparişi İndir",
             "options": "Seçenekler",
             "order_address": "Sipariş Adresi",
@@ -68,6 +78,7 @@
     "company": {
         "show_all": {
             "title": "Şirketim",
+            "edit": "Düzenle",
             "contact_data": "İletişim Bilgileri",
             "email": "E-Posta",
             "email_secondary": "E-Posta (diğer)",
@@ -108,7 +119,41 @@
                 "profile_image": "Profil Resmi",
                 "save": "Kaydet"
             }
-        }
+        },
+        "show": {
+            "title": "Şirket Detayları",
+            "edit": "Düzenle",
+            "upload_document": "Doküman Yükle",
+            "company_info": "Şirket Bilgileri",
+            "company_data": "Şirket Verileri",
+            "documents": "Dokümanlar",
+            "no_documents": "Doküman bulunmuyor"
+        },
+        "tax_identification_number": "Vergi Kimlik Numarası",
+        "security_service": "Güvenlik Hizmeti",
+        "cash_discount": "Nakit İndirimi"
+    },
+    "documents": {
+        "index": {
+            "title": "Doküman Yönetimi",
+            "add_document": "Doküman Ekle",
+            "no_documents": "Doküman bulunmuyor",
+            "download": "İndir",
+            "edit": "Düzenle",
+            "delete": "Sil",
+            "upload_modal": {
+                "title": "Yeni Doküman",
+                "name": "İsim",
+                "category": "Kategori",
+                "description": "Açıklama",
+                "file": "Dosya"
+            },
+            "edit_modal": {
+                "title": "Doküman Düzenle",
+                "new_file": "Yeni Dosya"
+            }
+        },
+        "confirm_delete": "Bu dokümanı gerçekten silmek istiyor musunuz?"
     },
     "employee": {
         "index": {
@@ -117,12 +162,14 @@
             "add": "Çalışan Ekle",
             "birth_date": "Doğum Tarihi",
             "status": "Durum",
+            "search_placeholder": "Çalışan ara...",
+            "no_results": "Çalışan bulunamadı",
             "modal": {
                 "title": "Yeni Çalışan",
                 "first_name": "Ad",
                 "last_name": "Soyad",
                 "birth_date": "Doğum Tarihi",
-                "status": "Durum",
+                "status": "Status",
                 "photo": "Fotoğraf (isteğe bağlı)",
                 "cancel": "İptal",
                 "save": "Kaydet"
@@ -268,13 +315,59 @@
         "end_date_required": "Bitiş tarihi gereklidir",
         "end_date_after_start": "Bitiş tarihi başlangıç tarihinden sonra olmalıdır",
         "change_date": "Tarihi Değiştir",
+        "edit_qm_price": "m² ve Fiyat Düzenle",
+        "modified_after_issue_warning": "Not: Bu fatura zaten düzenlenmiş. Değişiklik 'Düzeltilmiş Fatura' olarak işaretlenecektir.",
+        "confirm_cancel": "Bu performansı gerçekten iptal etmek istiyor musunuz?",
+        "confirm_delete": "Bu performansı gerçekten silmek istiyor musunuz? Bu işlem geri alınamaz.",
+        "confirm_restore": "Bu performansı gerçekten geri yüklemek istiyor musunuz?",
+        "confirm_date_change": "Bu performansın tarihini gerçekten değiştirmek istiyor musunuz?",
+        "confirm_qm_price_change": "Bu performansın m² ve fiyatını gerçekten değiştirmek istiyor musunuz?",
         "cancel": "İptal",
         "save": "Kaydet",
         "status_map": {
             "canceled": "İptal Edildi",
             "date_change": "Randevu Ertelendi",
             "no_change": "Değişiklik Yok",
+            "modified": "Değiştirildi",
             "unknown": "Bilinmiyor"
+        }
+    },
+    "vehicle": {
+        "license_plate": "Plaka",
+        "vehicle_identification_number": "Araç Kimlik Numarası",
+        "status": "Durum",
+        "notes": "Notlar",
+        "index": {
+            "title": "Araç Yönetimi",
+            "list": "Araç Listesi",
+            "add": "Araç Ekle",
+            "search_placeholder": "Araç ara...",
+            "no_results": "Araç bulunamadı",
+            "modal": {
+                "title": "Yeni Araç",
+                "image": "Resim (isteğe bağlı)",
+                "cancel": "İptal",
+                "save": "Kaydet"
+            }
+        },
+        "show": {
+            "title": "Araç Detayları",
+            "edit": "Düzenle",
+            "upload_document": "Doküman Yükle",
+            "vehicle_info": "Araç Bilgileri",
+            "vehicle_data": "Araç Verileri",
+            "documents": "Dokümanlar",
+            "no_documents": "Doküman bulunmuyor",
+            "status_map": {
+                "registered": "Kayıtlı",
+                "unregistered": "Kayıtsız",
+                "sold": "Satıldı"
+            }
+        },
+        "status_map": {
+            "registered": "Kayıtlı",
+            "unregistered": "Kayıtsız",
+            "sold": "Satıldı"
         }
     }
 }

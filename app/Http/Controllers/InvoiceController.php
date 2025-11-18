@@ -98,4 +98,28 @@ class InvoiceController extends Controller
         return redirect()->back()->with('success', 'Status wurde aktualisiert.');
     }
 
+    public function issueInvoice(Invoice $invoice)
+    {
+        if ($invoice->issued_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rechnung wurde bereits ausgestellt.'
+            ], 400);
+        }
+
+        $invoice->update([
+            'issued_at' => now()
+        ]);
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Rechnung erfolgreich ausgestellt.',
+                'invoice' => $invoice->fresh()
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Rechnung erfolgreich ausgestellt.');
+    }
+
 }

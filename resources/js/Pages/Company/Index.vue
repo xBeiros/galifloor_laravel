@@ -13,6 +13,7 @@ import { ErrorMessage, Field, Form as VeeForm } from "vee-validate";
 import * as yup from "yup";
 import { onMounted, ref } from "vue";
 import axios from "axios";
+import { router } from "@inertiajs/vue3";
 import { useI18n } from 'vue-i18n';
 import { Head } from '@inertiajs/vue3';
 
@@ -80,6 +81,10 @@ const onSubmit = async (values) => {
     }
 };
 
+const goToCompany = (companyId) => {
+    router.visit(`/company/${companyId}`);
+};
+
 onMounted(fetchCompanies);
 </script>
 
@@ -116,7 +121,7 @@ onMounted(fetchCompanies);
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                <tr v-for="company in companies" :key="company.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <tr v-for="company in companies" :key="company.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" @click="goToCompany(company.id)">
                     <td class="py-2">
                         <img v-if="company.image_url" :src="company.image_url" class="h-10 w-10 rounded-full object-cover" />
                     </td>
@@ -124,7 +129,7 @@ onMounted(fetchCompanies);
                     <td class="py-2 text-sm text-gray-700 dark:text-gray-300">{{ company.address }}</td>
                     <td class="py-2 text-sm text-gray-700 dark:text-gray-300">{{ company.postal }} {{ company.city }}</td>
                     <td class="py-2 text-sm text-gray-700 dark:text-gray-300">{{ company.email }}</td>
-                    <td class="py-2">
+                    <td class="py-2" @click.stop>
                         <button @click="openEditModal(company)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">{{ t('company.index.edit') }}</button>
                     </td>
                 </tr>
@@ -133,7 +138,7 @@ onMounted(fetchCompanies);
             
             <!-- Mobile Card View -->
             <div class="md:hidden space-y-4">
-                <div v-for="company in companies" :key="company.id" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700">
+                <div v-for="company in companies" :key="company.id" @click="goToCompany(company.id)" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow">
                     <div class="flex items-start space-x-4">
                         <img v-if="company.image_url" :src="company.image_url" class="h-12 w-12 rounded-full object-cover flex-shrink-0" />
                         <div class="flex-1 min-w-0">
@@ -149,7 +154,7 @@ onMounted(fetchCompanies);
                                     <span class="font-medium">{{ t('company.index.email') }}:</span> {{ company.email }}
                                 </p>
                             </div>
-                            <button @click="openEditModal(company)" class="mt-3 text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
+                            <button @click.stop="openEditModal(company)" class="mt-3 text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
                                 {{ t('company.index.edit') }}
                             </button>
                         </div>

@@ -18,13 +18,17 @@ const { t } = useI18n();
 
 const props = defineProps({
     order: Object,
-    order_number: Number
+    order_number: Number,
+    invoice: Object
 });
 
 const open = ref(false);
 const changeDate = ref(false);
+const editQmPrice = ref(false);
 const selectedDate = ref("");
 const selectedPerformanceId = ref(null);
+const selectedQm = ref("");
+const selectedPrice = ref("");
 const dateTime = ref("");
 const endDateTime = ref("");
 const flatrate = ref(false);
@@ -83,6 +87,7 @@ const getStatusBadge = (status) => {
         canceled: { label: t('performance.status_map.canceled'), class: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" },
         date_change: { label: t('performance.status_map.date_change'), class: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400" },
         no_change: { label: t('performance.status_map.no_change'), class: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" },
+        modified: { label: t('performance.status_map.modified'), class: "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400" },
     };
     return statusMap[status] ?? { label: t('performance.status_map.unknown'), class: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" };
 };
@@ -130,6 +135,9 @@ const onSubmit = async (values) => {
 };
 
 const changeToCanceled = async (id) => {
+    if (!confirm(t('performance.confirm_cancel'))) {
+        return;
+    }
     try {
         await performanceStore.changePerformanceStatus(id, "canceled");
         router.reload({ preserveScroll: true });
@@ -139,6 +147,9 @@ const changeToCanceled = async (id) => {
 };
 
 const deletePerformance = async (id) => {
+    if (!confirm(t('performance.confirm_delete'))) {
+        return;
+    }
     try {
         await performanceStore.deletePerformance(id);
         router.reload({ preserveScroll: true });
@@ -154,6 +165,9 @@ const openChangeDateDialog = (performanceId, currentChangeDate) => {
 };
 
 const changeToNoChange = async (id) => {
+    if (!confirm(t('performance.confirm_restore'))) {
+        return;
+    }
     try {
         await performanceStore.changePerformanceStatus(id, "no_change");
         router.reload({ preserveScroll: true });
@@ -163,6 +177,9 @@ const changeToNoChange = async (id) => {
 };
 
 const updateDateChange = async () => {
+    if (!confirm(t('performance.confirm_date_change'))) {
+        return;
+    }
     try {
         if (selectedPerformanceId.value && selectedDate.value) {
             const formattedDate = dayjs(selectedDate.value).format("YYYY-MM-DD HH:mm:ss");
@@ -178,6 +195,48 @@ const updateDateChange = async () => {
         }
     } catch (e) {
         console.error("Fehler beim Ändern des Datums:", e);
+    }
+};
+
+const openEditQmPriceDialog = (performance) => {
+    selectedPerformanceId.value = performance.id;
+    selectedQm.value = performance.qm;
+    selectedPrice.value = performance.price;
+    editQmPrice.value = true;
+};
+
+const updateQmAndPrice = async () => {
+    if (!confirm(t('performance.confirm_qm_price_change'))) {
+        return;
+    }
+    try {
+        if (selectedPerformanceId.value && selectedQm.value && selectedPrice.value) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            const response = await fetch(`/api/performances/${selectedPerformanceId.value}/qm-price`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken || ''
+                },
+                body: JSON.stringify({
+                    qm: selectedQm.value,
+                    price: selectedPrice.value
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                editQmPrice.value = false;
+                router.reload({ preserveScroll: true });
+            } else {
+                console.error('Fehler beim Aktualisieren:', data.message);
+            }
+        }
+    } catch (e) {
+        console.error("Fehler beim Aktualisieren von QM und Preis:", e);
     }
 };
 </script>
@@ -196,98 +255,106 @@ const updateDateChange = async () => {
         <div class="mt-8 flow-root">
             <div class="inline-block min-w-full py-2 align-middle">
                 <!-- Desktop Table View -->
-                <div class="overflow-x-auto hidden md:block">
+                <div class="hidden md:block">
                     <div class="overflow-hidden shadow dark:shadow-gray-900 ring-1 ring-black/5 dark:ring-white/10 sm:rounded-lg">
-                        <table class="table-auto divide-y divide-gray-300 dark:divide-gray-700 min-w-full">
-                            <thead class="bg-gray-50 dark:bg-gray-800">
-                            <tr>
-                                <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">{{ t('performance.performance') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.date') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.qm') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.price_per_qm') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.flatrate') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.total_price') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.status') }}</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.action') }}</th>
-                            </tr>
-                            </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                        <tr v-for="performance in performances" :key="performance?.id || performance?.invoice_id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td class="max-w-xs truncate whitespace-nowrap overflow-hidden py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                                {{ performance?.performance }}
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                <div v-if="performance?.status === 'date_change'">
-                                    <p>{{ formatDateHours(performance?.date_changed_to) }}</p>
-                                    <p class="line-through text-red-600 dark:text-red-400">{{ formatDateHours(performance?.date) }}</p>
-                                </div>
-                                <div v-else>
-                                    <p v-if="performance?.end_date">
-                                        {{ formatDateHours(performance?.date) }} - {{ formatDateHours(performance?.end_date) }}
-                                    </p>
-                                    <p v-else>{{ formatDateHours(performance?.date) }}</p>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ performance.qm }} qm</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ parseFloat(performance.price || 0).toFixed(2) }} €</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ flatrateText(performance.flatrate) }}</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                <div v-if="!performance.flatrate">
-                                    <p v-if="performance.status === 'canceled'" class="line-through">
-                                        {{ (parseFloat(performance.qm || 0) * parseFloat(performance.price || 0)).toFixed(2) }} €
-                                    </p>
-                                    <p v-else>
-                                        {{ (parseFloat(performance.qm || 0) * parseFloat(performance.price || 0)).toFixed(2) }} €
-                                    </p>
-                                </div>
-                                <div v-else>
-                                    <p v-if="performance.status === 'canceled'" class="line-through">
-                                        {{ parseFloat(performance.price || 0).toFixed(2) }} €
-                                    </p>
-                                    <p v-else>
-                                        {{ parseFloat(performance.price || 0).toFixed(2) }} €
-                                    </p>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                              <span :class="'inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ' + getStatusBadge(performance.status).class">
-                                {{ getStatusBadge(performance.status).label }}
-                              </span>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm flex justify-center items-center">
-                                <div>
-                                    <button v-if="performance.status !== 'canceled'" @click="changeToCanceled(performance.id)">
-                                        <!-- Button zum Stornieren -->
-                                        <svg class="w-4 h-4 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                            <path d="M367.2 412.5L99.5 144.8C77.1 176.1 64 214.5 64 256c0 106 86 192 192 192c41.5 0 79.9-13.1 111.2-35.5zm45.3-45.3C434.9 335.9 448 297.5 448 256c0-106-86-192-192-192c-41.5 0-79.9 13.1-111.2 35.5L412.5 367.2zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"/>
-                                        </svg>
-                                    </button>
+                        <div class="overflow-x-auto">
+                            <table class="w-full divide-y divide-gray-300 dark:divide-gray-700 table-fixed">
+                                <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="w-[200px] py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">{{ t('performance.performance') }}</th>
+                                    <th class="w-[180px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.date') }}</th>
+                                    <th class="w-[100px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.qm') }}</th>
+                                    <th class="w-[120px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.price_per_qm') }}</th>
+                                    <th class="w-[100px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.flatrate') }}</th>
+                                    <th class="w-[100px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.total_price') }}</th>
+                                    <th class="w-[130px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.status') }}</th>
+                                    <th class="w-[160px] px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">{{ t('performance.action') }}</th>
+                                </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                <tr v-for="performance in performances" :key="performance?.id || performance?.invoice_id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                                        <div class="truncate" :title="performance?.performance">
+                                            {{ performance?.performance }}
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <div v-if="performance?.status === 'date_change'" class="space-y-1">
+                                            <p class="text-xs">{{ formatDateHours(performance?.date_changed_to) }}</p>
+                                            <p class="line-through text-red-600 dark:text-red-400 text-xs">{{ formatDateHours(performance?.date) }}</p>
+                                        </div>
+                                        <div v-else class="text-xs">
+                                            <p v-if="performance?.end_date">
+                                                {{ formatDateHours(performance?.date) }}<br/>- {{ formatDateHours(performance?.end_date) }}
+                                            </p>
+                                            <p v-else>{{ formatDateHours(performance?.date) }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ performance.qm }} qm</td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ parseFloat(performance.price || 0).toFixed(2) }} €</td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <span class="text-xs">{{ flatrateText(performance.flatrate) }}</span>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <div v-if="!performance.flatrate">
+                                            <p v-if="performance.status === 'canceled'" class="line-through text-xs">
+                                                {{ (parseFloat(performance.qm || 0) * parseFloat(performance.price || 0)).toFixed(2) }} €
+                                            </p>
+                                            <p v-else class="text-xs">
+                                                {{ (parseFloat(performance.qm || 0) * parseFloat(performance.price || 0)).toFixed(2) }} €
+                                            </p>
+                                        </div>
+                                        <div v-else>
+                                            <p v-if="performance.status === 'canceled'" class="line-through text-xs">
+                                                {{ parseFloat(performance.price || 0).toFixed(2) }} €
+                                            </p>
+                                            <p v-else class="text-xs">
+                                                {{ parseFloat(performance.price || 0).toFixed(2) }} €
+                                            </p>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm">
+                                      <span :class="'inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ' + getStatusBadge(performance.status).class">
+                                        {{ getStatusBadge(performance.status).label }}
+                                      </span>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button v-if="performance.status !== 'canceled'" @click="changeToCanceled(performance.id)" class="flex-shrink-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Stornieren">
+                                                <svg class="w-4 h-4 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                                    <path d="M367.2 412.5L99.5 144.8C77.1 176.1 64 214.5 64 256c0 106 86 192 192 192c41.5 0 79.9-13.1 111.2-35.5zm45.3-45.3C434.9 335.9 448 297.5 448 256c0-106-86-192-192-192c-41.5 0-79.9 13.1-111.2 35.5L412.5 367.2zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"/>
+                                                </svg>
+                                            </button>
 
-                                    <button v-else @click="changeToNoChange(performance.id)">
-                                        <!-- Button zum Wiederherstellen -->
-                                        <svg class="w-4 h-4 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                            <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button @click="deletePerformance(performance.id)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-4 h-4 ml-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400">
-                                            <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button @click="openChangeDateDialog(performance.id, performance.date_change_to || performance.date)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-4 h-4 ml-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
-                                            <path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                            </tbody>
-                        </table>
+                                            <button v-else @click="changeToNoChange(performance.id)" class="flex-shrink-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Wiederherstellen">
+                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                                    <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
+                                                </svg>
+                                            </button>
+                                            
+                                            <button @click="deletePerformance(performance.id)" class="flex-shrink-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Löschen">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-4 h-4 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                                                    <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/>
+                                                </svg>
+                                            </button>
+                                            
+                                            <button @click="openChangeDateDialog(performance.id, performance.date_change_to || performance.date)" class="flex-shrink-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Datum ändern">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-4 h-4 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+                                                    <path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z"/>
+                                                </svg>
+                                            </button>
+                                            
+                                            <button @click="openEditQmPriceDialog(performance)" class="flex-shrink-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="QM und Preis bearbeiten">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-4 h-4 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                                                    <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.2 6.6-.1 13.8 5.2 17.9s13.8 7.4 17.9 5.2l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
@@ -409,17 +476,80 @@ const updateDateChange = async () => {
                                 <div class="mt-5 sm:mt-6 flex justify-between">
                                     <button
                                         type="button"
-                                        class="inline-flex w-1/2 justify-center rounded-md bg-gray-300 dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-400 dark:hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500 dark:focus-visible:outline-gray-400"
                                         @click="changeDate = false"
+                                        class="inline-flex justify-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                                     >
-                                        {{ t('performance.cancel') }}
+                                        {{ t('common.cancel') }}
                                     </button>
                                     <button
                                         type="button"
-                                        class="inline-flex w-1/2 justify-center ml-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                                         @click="updateDateChange"
+                                        class="inline-flex justify-center rounded-md bg-indigo-600 dark:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-600"
                                     >
-                                        {{ t('performance.save') }}
+                                        {{ t('common.save') }}
+                                    </button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </TransitionRoot>
+        
+        <!-- Modal für QM und Preis bearbeiten -->
+        <TransitionRoot as="template" :show="editQmPrice">
+            <Dialog class="relative z-50" @close="editQmPrice = false">
+                <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+                    <div class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity" />
+                </TransitionChild>
+                <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                            <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl dark:shadow-gray-900 transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
+                                <div>
+                                    <div class="mt-3 text-center sm:mt-5">
+                                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('performance.edit_qm_price') }}</h3>
+                                        <div v-if="invoice?.issued_at" class="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded text-sm text-yellow-800 dark:text-yellow-300">
+                                            {{ t('performance.modified_after_issue_warning') }}
+                                        </div>
+                                        <div class="mt-4 space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('performance.qm') }}</label>
+                                                <input
+                                                    type="number"
+                                                    v-model="selectedQm"
+                                                    step="0.01"
+                                                    min="0"
+                                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('performance.price') }}</label>
+                                                <input
+                                                    type="number"
+                                                    v-model="selectedPrice"
+                                                    step="0.01"
+                                                    min="0"
+                                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-5 sm:mt-6 flex justify-between">
+                                    <button
+                                        type="button"
+                                        class="inline-flex w-1/2 justify-center rounded-md bg-gray-300 dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-400 dark:hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500 dark:focus-visible:outline-gray-400"
+                                        @click="editQmPrice = false"
+                                    >
+                                        {{ t('common.cancel') }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="inline-flex w-1/2 justify-center ml-2 rounded-md bg-indigo-600 dark:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                        @click="updateQmAndPrice"
+                                    >
+                                        {{ t('common.save') }}
                                     </button>
                                 </div>
                             </DialogPanel>
