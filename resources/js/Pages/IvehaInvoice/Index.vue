@@ -1,0 +1,380 @@
+<script setup lang="ts">
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head } from '@inertiajs/vue3';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Field, Form as VeeForm, ErrorMessage } from 'vee-validate';
+import * as yup from 'yup';
+import { generateIvehaInvoicePDF } from '@/Composables/generateIvehaInvoicePDF';
+
+const { t } = useI18n();
+
+const formData = ref({
+    invoice_date: '2025-09-11',
+    invoice_number: '148',
+    project_number: '250010',
+    construction_address: 'Halle Wienkemeier, Klus 6a, 32825 Blomb',
+    description: 'Bauhilfe für 750 qm - 2 Personen',
+    qm: '750',
+    persons: '2',
+    hours: '4',
+    calendar_week: '31',
+    execution_day: '28.07.2025'
+});
+
+const validationSchema = yup.object({
+    invoice_date: yup.string().required('Datum ist erforderlich'),
+    invoice_number: yup.string().required('Rechnungsnummer ist erforderlich'),
+    project_number: yup.string().required('Projektnummer ist erforderlich'),
+    construction_address: yup.string().required('Bauvorhaben Adresse ist erforderlich'),
+    description: yup.string().required('Bezeichnung ist erforderlich'),
+    qm: yup.number().required('Quadratmeter ist erforderlich').min(0, 'Quadratmeter muss positiv sein'),
+    persons: yup.number().required('Personenanzahl ist erforderlich').min(1, 'Personenanzahl muss mindestens 1 sein'),
+    hours: yup.number().required('Stunden ist erforderlich').min(0, 'Stunden muss positiv sein'),
+    calendar_week: yup.string().required('Kalenderwoche ist erforderlich'),
+    execution_day: yup.string().required('Tag der Ausführung ist erforderlich')
+});
+
+// Automatische Berechnungen
+const totalPrice = computed(() => {
+    const hours = parseFloat(formData.value.hours) || 0;
+    const price = hours * 45;
+    return price.toFixed(2);
+});
+
+const totalSum = computed(() => {
+    const price = parseFloat(totalPrice.value) || 0;
+    return price;
+});
+
+const skonto = computed(() => {
+    const sum = totalSum.value;
+    const skontoValue = sum * 0.03;
+    return skontoValue.toFixed(2);
+});
+
+const invoiceAmount = computed(() => {
+    const sum = totalSum.value;
+    const skontoValue = parseFloat(skonto.value) || 0;
+    const amount = sum - skontoValue;
+    return amount.toFixed(2);
+});
+
+// Vorlage für Bezeichnung generieren
+const generateDescriptionTemplate = () => {
+    const qm = formData.value.qm || '';
+    const persons = formData.value.persons || '4';
+    return `Bauhilfe für ${qm} qm - ${persons} Person${persons !== '1' ? 'en' : ''}`;
+};
+
+// Bezeichnung aktualisieren wenn qm oder Personenanzahl geändert wird
+const lastManualDescription = ref('');
+const isManualEdit = ref(false);
+
+const updateDescriptionFromTemplate = () => {
+    // Nur aktualisieren, wenn die Bezeichnung noch nicht manuell geändert wurde
+    if (!isManualEdit.value) {
+        formData.value.description = generateDescriptionTemplate();
+    }
+};
+
+// Bezeichnung manuell geändert - merken
+watch(() => formData.value.description, (newVal) => {
+    const template = generateDescriptionTemplate();
+    if (newVal && newVal !== template) {
+        isManualEdit.value = true;
+        lastManualDescription.value = newVal;
+    } else if (newVal === template) {
+        isManualEdit.value = false;
+    }
+});
+
+// Initialisiere Bezeichnung beim ersten Laden
+watch([() => formData.value.qm, () => formData.value.persons], () => {
+    if (!isManualEdit.value && (formData.value.qm || formData.value.persons)) {
+        updateDescriptionFromTemplate();
+    }
+}, { immediate: true });
+
+// Setze initiale Bezeichnung basierend auf den Standardwerten
+onMounted(() => {
+    if (formData.value.qm && formData.value.persons) {
+        formData.value.description = generateDescriptionTemplate();
+    }
+});
+
+const onSubmit = async (values) => {
+    const invoiceData = {
+        ...values,
+        total_price: parseFloat(totalPrice.value),
+        total_sum: totalSum.value,
+        skonto: parseFloat(skonto.value),
+        invoice_amount: parseFloat(invoiceAmount.value)
+    };
+    
+    await generateIvehaInvoicePDF(invoiceData);
+};
+
+const handleDownload = async () => {
+    // Validierung vor dem Download
+    if (!formData.value.invoice_date || !formData.value.invoice_number || 
+        !formData.value.project_number || !formData.value.construction_address ||
+        !formData.value.description || !formData.value.qm || !formData.value.persons || !formData.value.hours ||
+        !formData.value.calendar_week || !formData.value.execution_day) {
+        alert('Bitte füllen Sie alle Felder aus.');
+        return;
+    }
+    
+    const invoiceData = {
+        ...formData.value,
+        total_price: parseFloat(totalPrice.value),
+        total_sum: totalSum.value,
+        skonto: parseFloat(skonto.value),
+        invoice_amount: parseFloat(invoiceAmount.value)
+    };
+    
+    await generateIvehaInvoicePDF(invoiceData);
+};
+</script>
+
+<template>
+    <Head :title="t('iveha_invoices.title')" />
+    <AuthenticatedLayout>
+        <template #header>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                {{ t('iveha_invoices.title') }}
+            </h2>
+        </template>
+
+        <div class="py-12">
+            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900 dark:text-gray-100">
+                        <h3 class="text-lg font-semibold mb-6">{{ t('iveha_invoices.description') }}</h3>
+                        
+                        <VeeForm 
+                            :validation-schema="validationSchema" 
+                            v-slot="{ handleSubmit: veeHandleSubmit, isSubmitting }"
+                        >
+                            <form @submit.prevent="veeHandleSubmit(onSubmit)" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Datum -->
+                                    <div>
+                                        <label for="invoice_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.invoice_date') }}
+                                        </label>
+                                        <Field
+                                            id="invoice_date"
+                                            name="invoice_date"
+                                            type="date"
+                                            v-model="formData.invoice_date"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="invoice_date" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Rechnungsnummer -->
+                                    <div>
+                                        <label for="invoice_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.invoice_number') }}
+                                        </label>
+                                        <Field
+                                            id="invoice_number"
+                                            name="invoice_number"
+                                            type="text"
+                                            v-model="formData.invoice_number"
+                                            placeholder="2024-"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="invoice_number" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Projektnummer -->
+                                    <div>
+                                        <label for="project_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.project_number') }}
+                                        </label>
+                                        <Field
+                                            id="project_number"
+                                            name="project_number"
+                                            type="text"
+                                            v-model="formData.project_number"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="project_number" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Bauvorhaben Adresse -->
+                                    <div>
+                                        <label for="construction_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.construction_address') }}
+                                        </label>
+                                        <Field
+                                            id="construction_address"
+                                            name="construction_address"
+                                            type="text"
+                                            v-model="formData.construction_address"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="construction_address" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Bezeichnung -->
+                                    <div class="md:col-span-2">
+                                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.description') }}
+                                        </label>
+                                        <Field
+                                            id="description"
+                                            name="description"
+                                            type="text"
+                                            v-model="formData.description"
+                                            :placeholder="generateDescriptionTemplate()"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="description" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            {{ t('iveha_invoices.form.description_hint') }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Quadratmeter -->
+                                    <div>
+                                        <label for="qm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.qm') }}
+                                        </label>
+                                        <Field
+                                            id="qm"
+                                            name="qm"
+                                            type="number"
+                                            step="0.01"
+                                            v-model="formData.qm"
+                                            @input="updateDescriptionFromTemplate"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="qm" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Personenanzahl -->
+                                    <div>
+                                        <label for="persons" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.persons') }}
+                                        </label>
+                                        <Field
+                                            id="persons"
+                                            name="persons"
+                                            type="number"
+                                            step="1"
+                                            min="1"
+                                            v-model="formData.persons"
+                                            @input="updateDescriptionFromTemplate"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="persons" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Stunden -->
+                                    <div>
+                                        <label for="hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.hours') }}
+                                        </label>
+                                        <Field
+                                            id="hours"
+                                            name="hours"
+                                            type="number"
+                                            step="0.01"
+                                            v-model="formData.hours"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="hours" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <!-- Kalenderwoche -->
+                                    <div>
+                                        <label for="calendar_week" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.calendar_week') }}
+                                        </label>
+                                        <Field
+                                            id="calendar_week"
+                                            name="calendar_week"
+                                            type="text"
+                                            v-model="formData.calendar_week"
+                                            placeholder="KW"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="calendar_week" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+
+
+                                    <!-- Tag der Ausführung -->
+                                    <div>
+                                        <label for="execution_day" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            {{ t('iveha_invoices.form.day') }}
+                                        </label>
+                                        <Field
+                                            id="execution_day"
+                                            name="execution_day"
+                                            type="text"
+                                            v-model="formData.execution_day"
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        <ErrorMessage name="execution_day" class="mt-1 text-sm text-red-600 dark:text-red-400" />
+                                    </div>
+                                </div>
+
+
+                                <!-- Berechnungen -->
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {{ t('iveha_invoices.form.total_price') }}
+                                        </span>
+                                        <span class="text-sm text-gray-900 dark:text-white">
+                                            {{ totalPrice }} € <span class="text-xs text-gray-500">({{ t('iveha_invoices.auto_calculated') }})</span>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {{ t('iveha_invoices.form.total_sum') }}
+                                        </span>
+                                        <span class="text-sm text-gray-900 dark:text-white">
+                                            {{ totalSum.toFixed(2) }} €
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {{ t('iveha_invoices.form.skonto') }}
+                                        </span>
+                                        <span class="text-sm text-gray-900 dark:text-white">
+                                            -{{ skonto }} € <span class="text-xs text-gray-500">({{ t('iveha_invoices.auto_calculated') }})</span>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between border-t border-gray-300 dark:border-gray-600 pt-2">
+                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {{ t('iveha_invoices.form.invoice_amount') }}
+                                        </span>
+                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {{ invoiceAmount }} €
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Download Button -->
+                                <div class="flex justify-end">
+                                    <button
+                                        type="button"
+                                        @click="handleDownload"
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                    >
+                                        {{ t('iveha_invoices.form.download') }}
+                                    </button>
+                                </div>
+                            </form>
+                        </VeeForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AuthenticatedLayout>
+</template>
+

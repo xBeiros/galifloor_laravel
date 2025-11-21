@@ -8,7 +8,8 @@
         "employees": "Çalışanlar",
         "management": "Yönetim",
         "vehicles": "Araçlar",
-        "documents": "Dokümanlar"
+        "documents": "Dokümanlar",
+        "iveha_invoices": "Iveha Faturaları"
     },
     "common": {
         "profile": "Profil",
@@ -369,6 +370,33 @@
             "unregistered": "Kayıtsız",
             "sold": "Satıldı"
         }
+    },
+    "iveha_invoices": {
+        "title": "Iveha Faturaları",
+        "description": "Iveha formatında fatura oluşturun",
+        "form": {
+            "invoice_date": "Tarih (Fatura Tarihi)",
+            "invoice_number": "Fatura Numarası",
+            "project_number": "Proje Numarası",
+            "construction_address": "İnşaat Adresi",
+            "description": "Açıklama",
+            "description_placeholder": "{qm} m² için İnşaat Yardımı - 4 Kişi",
+            "description_hint": "Açıklama, m² ve kişi sayısına göre otomatik olarak oluşturulur, ancak manuel olarak ayarlanabilir",
+            "qm": "Metrekare (m²)",
+            "persons": "Kişi Sayısı",
+            "hours": "Saat",
+            "total_price": "Toplam Fiyat",
+            "total_sum": "Toplam Tutar",
+            "skonto": "%3 İndirim",
+            "invoice_amount": "Fatura Tutarı",
+            "execution_period": "Yürütme Süresi",
+            "calendar_week": "Takvim Haftası (KW)",
+            "week": "Hafta",
+            "day": "Yürütme Günü",
+            "create": "Fatura Oluştur",
+            "download": "PDF İndir"
+        },
+        "auto_calculated": "Otomatik hesaplanır"
     }
 }
 

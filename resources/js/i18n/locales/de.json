@@ -8,7 +8,8 @@
         "employees": "Mitarbeiter",
         "management": "Verwaltung",
         "vehicles": "Fahrzeuge",
-        "documents": "Dokumente"
+        "documents": "Dokumente",
+        "iveha_invoices": "Iveha Rechnungen"
     },
     "common": {
         "profile": "Profil",
@@ -37,6 +38,7 @@
         "construction": "Baustelle",
         "address": "Anschrift",
         "city": "Ort",
+        "status": "Status",
         "modal": {
             "title": "Neuer Auftrag",
             "project_number": "Projektnummer",
@@ -369,6 +371,33 @@
             "unregistered": "Abgemeldet",
             "sold": "Verkauft"
         }
+    },
+    "iveha_invoices": {
+        "title": "Iveha Rechnungen",
+        "description": "Erstellen Sie Rechnungen im Iveha-Format",
+        "form": {
+            "invoice_date": "Datum (Rechnungstag)",
+            "invoice_number": "Rechnungsnummer",
+            "project_number": "Projektnummer",
+            "construction_address": "Bauvorhaben Adresse",
+            "description": "Bezeichnung",
+            "description_placeholder": "Bauhilfe für {qm} qm - 4 Person",
+            "description_hint": "Die Bezeichnung wird automatisch basierend auf qm und Personenanzahl generiert, kann aber manuell angepasst werden",
+            "qm": "Quadratmeter (qm)",
+            "persons": "Personenanzahl",
+            "hours": "Stunden",
+            "total_price": "Gesamtpreis",
+            "total_sum": "Gesamtsumme",
+            "skonto": "3% Skonto",
+            "invoice_amount": "Rechnungsbetrag",
+            "execution_period": "Ausführungszeitraum",
+            "calendar_week": "Kalenderwoche (KW)",
+            "week": "Woche",
+            "day": "Tag der Ausführung",
+            "create": "Rechnung erstellen",
+            "download": "PDF herunterladen"
+        },
+        "auto_calculated": "Automatisch berechnet"
     }
 }
 

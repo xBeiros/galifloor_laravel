@@ -18,6 +18,7 @@ import axios from "axios";
 import { router } from "@inertiajs/vue3";
 import { useI18n } from 'vue-i18n';
 import { Head } from '@inertiajs/vue3';
+import StatusBadge from '@/Components/StatusBadge.vue';
 
 const { t } = useI18n();
 
@@ -110,6 +111,7 @@ onMounted(async () => {
                                 <th scope="col" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter lg:table-cell">{{ t('invoices.construction') }}</th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.address') }}</th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.city') }}</th>
+                                <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.status') }}</th>
                             </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -120,6 +122,10 @@ onMounted(async () => {
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis']">{{ invoice.construction}}</td>
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis']">{{ invoice.address }}</td>
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis']">{{ invoice.city }}</td>
+                                <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm']">
+                                    <StatusBadge v-if="invoice.status" :status="invoice.status" />
+                                    <span v-else class="text-gray-400 dark:text-gray-500">-</span>
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -178,20 +184,6 @@ onMounted(async () => {
                                                 <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('invoices.modal.city') }}</label>
                                                 <Field id="city" name="city" type="text" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                                 <ErrorMessage name="city" class="mt-2 text-sm text-red-600 dark:text-red-400" />
-                                            </div>
-                                        </div>
-
-                                        <div class="flex">
-                                            <div class="flex-1">
-                                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('invoices.modal.start_date') }}</label>
-                                                <Field id="start_date" name="start_date" type="date" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                                                <ErrorMessage name="start_date" class="mt-2 text-sm text-red-600 dark:text-red-400" />
-                                            </div>
-                                            <div class="mx-2"></div>
-                                            <div class="flex-1">
-                                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('invoices.modal.end_date') }}</label>
-                                                <Field id="end_date" name="end_date" type="date" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                                                <ErrorMessage name="end_date" class="mt-2 text-sm text-red-600 dark:text-red-400" />
                                             </div>
                                         </div>
 

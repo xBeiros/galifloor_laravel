@@ -129,6 +129,10 @@ Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
 Route::get('/language/{locale}', [LanguageController::class, 'switchLanguage'])
      ->name('language.switch');
 
+// Iveha Rechnungen
+Route::get('/iveha-invoices', [InvoiceController::class, 'ivehaIndex'])->middleware(['auth', 'verified'])->name('iveha-invoices.index');
+Route::post('/iveha-invoices', [InvoiceController::class, 'ivehaStore'])->middleware(['auth', 'verified'])->name('iveha-invoices.store');
+
 
 Route::resource('employee', EmployeeController::class);
 Route::middleware(['auth', 'verified'])->group(function () {

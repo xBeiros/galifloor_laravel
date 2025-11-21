@@ -27,7 +27,8 @@ const managementMenuItems = computed(() => [
     { name: t('nav.employees'), route: 'employees.index' },
     { name: t('nav.vehicles'), route: 'vehicles.index' },
     { name: t('nav.company'), route: 'company.details' },
-    { name: t('nav.documents'), route: 'documents.index' }
+    { name: t('nav.documents'), route: 'documents.index' },
+    { name: t('nav.iveha_invoices'), route: 'iveha-invoices.index' }
 ]);
 
 const languages = [
@@ -85,7 +86,7 @@ const switchLanguage = (langCode: string) => {
                                             <span
                                                 :class="[
                                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none cursor-pointer',
-                                                    route().current('employees.index') || route().current('vehicles.index') || route().current('company.details') || route().current('documents.index')
+                                                    route().current('employees.index') || route().current('vehicles.index') || route().current('company.details') || route().current('documents.index') || route().current('iveha-invoices.index')
                                                         ? 'border-indigo-400 dark:border-indigo-500 text-gray-900 dark:text-white focus:border-indigo-700 dark:focus:border-indigo-400'
                                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 focus:text-gray-700 dark:focus:text-white focus:border-gray-300 dark:focus:border-gray-600'
                                                 ]"

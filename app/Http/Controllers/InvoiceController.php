@@ -122,4 +122,22 @@ class InvoiceController extends Controller
         return redirect()->back()->with('success', 'Rechnung erfolgreich ausgestellt.');
     }
 
+    /**
+     * Iveha Rechnungen Index-Seite anzeigen.
+     */
+    public function ivehaIndex()
+    {
+        return Inertia::render('IvehaInvoice/Index');
+    }
+
+    /**
+     * Iveha Rechnung speichern (optional, für spätere Verwendung).
+     */
+    public function ivehaStore(Request $request)
+    {
+        // Die Daten werden nur für die PDF-Generierung verwendet
+        // Keine Validierung erforderlich, da die PDF-Generierung clientseitig erfolgt
+        return response()->json(['message' => 'Iveha Rechnung erfolgreich verarbeitet.']);
+    }
+
 }
