@@ -103,7 +103,7 @@ onMounted(() => {
     }
 });
 
-const onSubmit = async (values: yup.InferType<typeof validationSchema>) => {
+const onSubmit = async (values: any) => {
     const invoiceData = {
         ...values,
         total_price: parseFloat(totalPrice.value),
