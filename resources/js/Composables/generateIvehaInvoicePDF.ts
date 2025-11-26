@@ -1,187 +1,453 @@
-import jsPDF from "jspdf";
+import { PDFDocument, rgb, StandardFonts, PDFFont } from "pdf-lib";
 import dayjs from "dayjs";
 import "dayjs/locale/de";
+import { generateIvehaReceiptPDF } from "./generateIvehaReceiptPDF";
 
 dayjs.locale('de');
 
-// Hilfsfunktion zum Laden eines Fonts als Base64
-const loadFontAsBase64 = async (fontPath: string): Promise<string> => {
+// Hilfsfunktion zum Laden eines PDFs
+const loadPDFTemplate = async (pdfPath: string): Promise<Uint8Array> => {
+    try {
+        const response = await fetch(pdfPath);
+        if (!response.ok) {
+            throw new Error(`PDF konnte nicht geladen werden: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+    } catch (error) {
+        console.error(`Fehler beim Laden des PDFs ${pdfPath}:`, error);
+        throw error;
+    }
+};
+
+// Hilfsfunktion zum Laden eines Fonts
+const loadFont = async (fontPath: string): Promise<Uint8Array> => {
     try {
         const response = await fetch(fontPath);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64 = reader.result as string;
-                // Entferne den Data-URL-Präfix (data:font/ttf;base64,)
-                const base64Data = base64.split(',')[1];
-                resolve(base64Data);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        if (!response.ok) {
+            throw new Error(`Font konnte nicht geladen werden: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
     } catch (error) {
         console.error(`Fehler beim Laden des Fonts ${fontPath}:`, error);
         throw error;
     }
 };
 
-// Fonts laden und registrieren
-const loadAndRegisterFonts = async (doc: jsPDF) => {
-    try {
-        const baseUrl = window.location.origin;
-        
-        // Lade Palatino Linotype Roman (normal)
-        const romanBase64 = await loadFontAsBase64(`${baseUrl}/fonts/palatinolinotype_roman.ttf`);
-        doc.addFileToVFS('PalatinoLinotype-Roman.ttf', romanBase64);
-        doc.addFont('PalatinoLinotype-Roman.ttf', 'PalatinoLinotype', 'normal');
-        
-        // Lade Palatino Linotype Bold (fett)
-        const boldBase64 = await loadFontAsBase64(`${baseUrl}/fonts/palatinolinotype_bold.ttf`);
-        doc.addFileToVFS('PalatinoLinotype-Bold.ttf', boldBase64);
-        doc.addFont('PalatinoLinotype-Bold.ttf', 'PalatinoLinotype', 'bold');
-        
-        console.log('Fonts erfolgreich geladen und registriert');
-    } catch (error) {
-        console.error('Fehler beim Laden der Fonts:', error);
-        // Fallback auf Standard-Fonts wenn Fonts nicht geladen werden können
-    }
-};
-
 export const generateIvehaInvoicePDF = async (invoiceData: any) => {
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
-    
-    // Fonts laden und registrieren
-    await loadAndRegisterFonts(doc);
-    
     // Datum formatieren
     const invoiceDate = invoiceData.invoice_date ? dayjs(invoiceData.invoice_date) : dayjs();
     const formattedDate = invoiceDate.format("DD.MM.YYYY");
     
-    // Bild-URL (aus public/images)
-    const imageUrl = window.location.origin + '/images/Iveha_rechnungvorlage.png';
+    // PDF-Vorlage laden (aus public)
+    const baseUrl = window.location.origin;
+    const pdfUrl = `${baseUrl}/IVEHA_Vorlage.pdf`;
     
-    // Warte auf das Bild und füge es als Hintergrund hinzu
+    let pdfBytes: Uint8Array;
     try {
-        // Lade das Bild und füge es als Hintergrundbild hinzu
-        // A4 Format: 210mm x 297mm
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        await new Promise((resolve, reject) => {
-            img.onload = () => {
-                try {
-                    // Füge das Bild als Hintergrund hinzu (volle Seite)
-                    doc.addImage(img, 'PNG', 0, 0, 210, 297);
-                    resolve(null);
-                } catch (error) {
-                    console.error('Fehler beim Hinzufügen des Bildes:', error);
-                    reject(error);
-                }
-            };
-            img.onerror = (error) => {
-                console.error('Fehler beim Laden des Bildes:', error);
-                reject(error);
-            };
-            img.src = imageUrl;
-        });
+        pdfBytes = await loadPDFTemplate(pdfUrl);
     } catch (error) {
-        console.error('Bild konnte nicht geladen werden, verwende Text-Version:', error);
+        console.error('PDF-Vorlage konnte nicht geladen werden:', error);
+        throw new Error('PDF-Vorlage konnte nicht geladen werden. Bitte stellen Sie sicher, dass die Datei IVEHA_Vorlage.pdf im Ordner public vorhanden ist.');
     }
     
-    // Textfarbe setzen (schwarz für bessere Lesbarkeit auf Hintergrund)
-    doc.setTextColor(0, 0, 0);
+    // PDF-Dokument laden
+    const pdfDoc = await PDFDocument.load(pdfBytes);
     
-    // Positionen basierend auf der Vorlage anpassen
-    // Die Positionen müssen an die tatsächliche Vorlage angepasst werden
+    // Custom Fonts laden (Palatino Linotype aus public/fonts)
+    let palatinoFont: PDFFont;
+    let palatinoBoldFont: PDFFont;
+    
+    try {
+        console.log('Starte Font-Ladevorgang...');
+        const romanFontPath = `${baseUrl}/fonts/palatinolinotype_roman.ttf`;
+        const boldFontPath = `${baseUrl}/fonts/palatinolinotype_bold.ttf`;
+        
+        console.log('Lade Roman Font von:', romanFontPath);
+        const romanFontBytes = await loadFont(romanFontPath);
+        console.log('Roman Font geladen, Größe:', romanFontBytes.length, 'bytes');
+        
+        console.log('Lade Bold Font von:', boldFontPath);
+        const boldFontBytes = await loadFont(boldFontPath);
+        console.log('Bold Font geladen, Größe:', boldFontBytes.length, 'bytes');
+        
+        // Fonts einbetten - pdf-lib unterstützt TTF-Fonts direkt
+        console.log('Bette Roman Font ein...');
+        palatinoFont = await pdfDoc.embedFont(romanFontBytes);
+        console.log('Roman Font eingebettet:', palatinoFont ? 'Erfolg' : 'Fehler');
+        
+        console.log('Bette Bold Font ein...');
+        palatinoBoldFont = await pdfDoc.embedFont(boldFontBytes);
+        console.log('Bold Font eingebettet:', palatinoBoldFont ? 'Erfolg' : 'Fehler');
+        
+        // Verifiziere, dass die Fonts korrekt geladen wurden
+        if (!palatinoFont || !palatinoBoldFont) {
+            throw new Error('Fonts konnten nicht eingebettet werden');
+        }
+        
+        // Test: Prüfe ob Fonts funktionieren
+        const testWidth = palatinoFont.widthOfTextAtSize('Test', 12);
+        const testBoldWidth = palatinoBoldFont.widthOfTextAtSize('Test', 12);
+        console.log('Font-Test - Roman Font Textbreite:', testWidth);
+        console.log('Font-Test - Bold Font Textbreite:', testBoldWidth);
+        
+        console.log('✅ Palatino Linotype Fonts erfolgreich geladen und eingebettet');
+    } catch (error) {
+        console.error('❌ Fehler beim Laden der Custom Fonts:', error);
+        console.error('Fehlerdetails:', error instanceof Error ? error.message : String(error));
+        console.error('Stack:', error instanceof Error ? error.stack : 'N/A');
+        
+        // Fallback auf Standard-Fonts
+        console.log('Verwende Standard-Fonts (Helvetica) als Fallback...');
+        palatinoFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        palatinoBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        console.warn('⚠️ Verwende Standard-Fonts (Helvetica) als Fallback');
+    }
+    
+    // Erste Seite des PDFs holen
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+    
+    // Konvertiere mm zu Points (1mm = 2.83465 points)
+    const mmToPoints = (mm: number) => mm * 2.83465;
+    
+    // Textfarbe setzen (schwarz)
+    const black = rgb(0, 0, 0);
+    const white = rgb(1, 1, 1);
+    
+    // Vorhandene Texte in der Vorlage mit weißen Rechtecken überdecken
+    // Datum-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(150),
+        y: height - mmToPoints(90),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
+    
+    // Projektnummer-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(40),
+        y: height - mmToPoints(128),
+        width: mmToPoints(30),
+        height: mmToPoints(5),
+        color: white,
+    });
+    
+    // Bauvorhaben-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(40),
+        y: height - mmToPoints(145),
+        width: mmToPoints(160),
+        height: mmToPoints(15),
+        color: white,
+    });
+    
+    // Rechnungsnummer-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(150),
+        y: height - mmToPoints(110),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
     
     // Datum (rechts oben, bei "Datum:")
-    // BEISPIEL 1: Verwendung von Palatino Linotype Roman (normal)
-    // doc.setFont("PalatinoLinotype", "normal");
-    doc.setFontSize(10);
-    //doc.setFont("helvetica", "normal");
-    doc.setFont("PalatinoLinotype", "bold");
-    doc.text(formattedDate, 162, 81.1, { align: "right" });
+    // Position: x=162mm, y=81.1mm (von oben, daher height - y)
+    // Rechtsbündig: x-Position minus Textbreite
+    const dateTextWidth = palatinoBoldFont.widthOfTextAtSize(formattedDate, 10);
+    firstPage.drawText(formattedDate, {
+        x: mmToPoints(162) - dateTextWidth,
+        y: height - mmToPoints(86.5),
+        size: 10,
+        font: palatinoBoldFont,
+        color: black,
+    });
     
     // Projektnummer (bei "Projekt Nr.:")
-    doc.setFontSize(11);
-    doc.text(String(invoiceData.project_number || ""), 43, 120);
+    firstPage.drawText(String(invoiceData.project_number || ""), {
+        x: mmToPoints(43),
+        y: height - mmToPoints(123.5),
+        size: 11,
+        font: palatinoFont,
+        color: black,
+    });
     
     // Bauvorhaben (bei "Bauvorhaben:")
-    // Text in einer Zeile mit genug Breite
-    doc.setFontSize(11);
-    doc.setFont("PalatinoLinotype", "normal");
-    
     const constructionAddress = String(invoiceData.construction_address || "");
+    // Text aufteilen falls zu lang (max. 160mm Breite)
+    const maxWidthPoints = mmToPoints(160);
+    const addressLines: string[] = [];
+    let currentLine = '';
+    const words = constructionAddress.split(' ');
     
-    // Text direkt in einer Zeile ausgeben mit maximaler Breite
-    // Von x=45 bis x=200 (155mm Breite) - genug Platz für lange Adressen
-    // Falls immer noch zu kurz, wird automatisch umgebrochen
-    const maxWidth = 160; // Maximale Breite in mm (fast die gesamte Seite)
-    const addressLines = doc.splitTextToSize(constructionAddress, maxWidth);
+    for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = palatinoFont.widthOfTextAtSize(testLine, 11);
+        if (testWidth > maxWidthPoints && currentLine) {
+            addressLines.push(currentLine);
+            currentLine = word;
+        } else {
+            currentLine = testLine;
+        }
+    }
+    if (currentLine) {
+        addressLines.push(currentLine);
+    }
     
     // Text in einer oder mehreren Zeilen ausgeben
     addressLines.forEach((line: string, index: number) => {
-        doc.text(line, 45, 130.5 + (index * 4));
+        firstPage.drawText(line, {
+            x: mmToPoints(45),
+            y: height - mmToPoints(132 + (index * 4)),
+            size: 11,
+            font: palatinoFont,
+            color: black,
+        });
     });
-    doc.setFont("PalatinoLinotype", "bold");
-    // Rechnungsnummer (bei "Re. Nr.:")
-    doc.text(String(invoiceData.invoice_number || ""), 157.5, 108.5);
     
-    // Tabelle für Positionen - Positionen basierend auf Vorlage
-    // Position 1 (bei "Pos." Spalte)
+    // Rechnungsnummer (bei "Re. Nr.:")
+    const invoiceNumber = String(invoiceData.invoice_number || "");
+    if (invoiceNumber) {
+        firstPage.drawText(invoiceNumber, {
+            x: mmToPoints(153.8),
+            y: height - mmToPoints(106.8),
+            size: 11,
+            font: palatinoBoldFont,
+            color: black,
+        });
+    }
+    
+    // Tabelle für Positionen
     const tableStartY = 100;
     const tableX = 15;
-    
-    // Tabelleninhalt - Positionen anpassen basierend auf Vorlage
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
     const contentY = tableStartY + 8;
     
-    doc.setFont("PalatinoLinotype", "bold");
-    // Bezeichnung (bei "Bezeichnung" Spalte)
-    doc.text(String(invoiceData.description || ""), tableX + 18, contentY + 38);
+    // Vorhandene Texte in der Tabellenbereichen mit weißen Rechtecken überdecken
+    // Bezeichnung-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 15),
+        y: height - mmToPoints(contentY + 50),
+        width: mmToPoints(120),
+        height: mmToPoints(20),
+        color: white,
+    });
     
-    // Stunden (bei "Stunden" Spalte)
-    doc.text(String(invoiceData.hours || "0"), tableX + 100, contentY + 38);
+    // Stunden-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 100),
+        y: height - mmToPoints(contentY + 50),
+        width: mmToPoints(15),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    doc.setFontSize(9);
-    // Gesamtpreis (bei "Gesamtpreis" Spalte)
-    doc.text((parseFloat(invoiceData.total_price || "0")).toFixed(2) + " €", tableX + 155, contentY + 38, { align: "center" });
+    // Pro Stunde-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 125),
+        y: height - mmToPoints(contentY + 50),
+        width: mmToPoints(15),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    // Gesamtsumme, Skonto, Rechnungsbetrag (rechts, bei den entsprechenden Feldern)
-    const summaryStartY = contentY + 15;
-    const summaryTableX = 130;
-    const summaryCol2X = 180; // Position für Beträge
+    // Gesamtpreis-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 150),
+        y: height - mmToPoints(contentY + 50),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    doc.setFontSize(9);
+    // Gesamtsumme-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 150),
+        y: height - mmToPoints(contentY + 58),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    // Gesamtsumme
-    doc.text((parseFloat(invoiceData.total_sum || "0")).toFixed(2) + " €", tableX + 155, contentY + 46, { align: "center" });
+    // Skonto-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 150),
+        y: height - mmToPoints(contentY + 63),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    // -3% Skonto
-    doc.text("-" + (parseFloat(invoiceData.skonto || "0")).toFixed(2) + " €", tableX + 155, contentY + 54, { align: "center" });
+    // Rechnungsbetrag-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(tableX + 150),
+        y: height - mmToPoints(contentY + 69),
+        width: mmToPoints(20),
+        height: mmToPoints(5),
+        color: white,
+    });
     
-    // Rechnungsbetrag
-    // BEISPIEL 2: Verwendung von Palatino Linotype Bold (fett)
-    // doc.setFont("PalatinoLinotype", "bold");
-
-    doc.text((parseFloat(invoiceData.invoice_amount || "0")).toFixed(2) + " €", tableX + 155, contentY + 62, { align: "center" });
+    // Berechne Stunden pro Person für die Bezeichnung
+    const totalHours = parseFloat(invoiceData.hours || "0");
+    const persons = parseFloat(invoiceData.persons || "1");
+    const hoursPerPerson = persons > 0 ? totalHours / persons : totalHours;
+    
+    // Bezeichnung (bei "Bezeichnung" Spalte) - mit "X Personen à Y Stunden" erweitern
+    const baseDescription = String(invoiceData.description || "");
+    const descriptionWithHours = `${baseDescription} à ${hoursPerPerson} Std.`;
+    
+    // Text aufteilen falls zu lang
+    const maxDescWidthPoints = mmToPoints(120); // Maximale Breite für Bezeichnung
+    const descLines: string[] = [];
+    let currentDescLine = '';
+    const descWords = descriptionWithHours.split(' ');
+    
+    for (const word of descWords) {
+        const testLine = currentDescLine ? `${currentDescLine} ${word}` : word;
+        const testWidth = palatinoBoldFont.widthOfTextAtSize(testLine, 11);
+        if (testWidth > maxDescWidthPoints && currentDescLine) {
+            descLines.push(currentDescLine);
+            currentDescLine = word;
+        } else {
+            currentDescLine = testLine;
+        }
+    }
+    if (currentDescLine) {
+        descLines.push(currentDescLine);
+    }
+    
+    // Bezeichnung in einer oder mehreren Zeilen ausgeben
+    descLines.forEach((line: string, index: number) => {
+        firstPage.drawText(line, {
+            x: mmToPoints(tableX + 18),
+            y: height - mmToPoints(contentY + 44.5 - (index * 4)),
+            size: 10,
+            font: palatinoFont,
+            color: black,
+        });
+    });
+    
+    // Stunden (bei "Stunden" Spalte) - Gesamtanzahl der Stunden - zentriert
+    const hoursText = String(totalHours);
+    const hoursTextWidth = palatinoBoldFont.widthOfTextAtSize(hoursText, 11);
+    firstPage.drawText(hoursText, {
+        x: mmToPoints(tableX + 105.5) - (hoursTextWidth / 2),
+        y: height - mmToPoints(contentY + 44.5),
+        size: 10,
+        font: palatinoFont,
+        color: black,
+    });
+    
+    // Pro Stunde (zwischen Stunden und Gesamtpreis) - zentriert
+    const pricePerHourText = "45 €";
+    const pricePerHourWidth = palatinoFont.widthOfTextAtSize(pricePerHourText, 11);
+    firstPage.drawText(pricePerHourText, {
+        x: mmToPoints(tableX + 130) - (pricePerHourWidth / 2),
+        y: height - mmToPoints(contentY + 44.5),
+        size: 10,
+        font: palatinoFont,
+        color: black,
+    });
+    
+    // Gesamtpreis (bei "Gesamtpreis" Spalte) - zentriert
+    const totalPriceText = (parseFloat(invoiceData.total_price || "0")).toFixed(2) + " €";
+    const totalPriceWidth = palatinoFont.widthOfTextAtSize(totalPriceText, 9);
+    firstPage.drawText(totalPriceText, {
+        x: mmToPoints(tableX + 155) - (totalPriceWidth / 2),
+        y: height - mmToPoints(contentY + 44.5),
+        size: 9,
+        font: palatinoFont,
+        color: black,
+    });
+    
+    // Gesamtsumme - zentriert
+    const totalSumText = (parseFloat(invoiceData.total_sum || "0")).toFixed(2) + " €";
+    const totalSumWidth = palatinoFont.widthOfTextAtSize(totalSumText, 9);
+    firstPage.drawText(totalSumText, {
+        x: mmToPoints(tableX + 155) - (totalSumWidth / 2),
+        y: height - mmToPoints(contentY + 53.4),
+        size: 9,
+        font: palatinoFont,
+        color: black,
+    });
+    
+    // -3% Skonto - zentriert
+    const skontoText = "-" + (parseFloat(invoiceData.skonto || "0")).toFixed(2) + " €";
+    const skontoWidth = palatinoFont.widthOfTextAtSize(skontoText, 9);
+    firstPage.drawText(skontoText, {
+        x: mmToPoints(tableX + 155) - (skontoWidth / 2),
+        y: height - mmToPoints(contentY + 58.7),
+        size: 9,
+        font: palatinoFont,
+        color: black,
+    });
+    
+    // Rechnungsbetrag - zentriert, bold und unterstrichen
+    const invoiceAmountText = (parseFloat(invoiceData.invoice_amount || "0")).toFixed(2) + " €";
+    const invoiceAmountWidth = palatinoBoldFont.widthOfTextAtSize(invoiceAmountText, 9);
+    const invoiceAmountX = mmToPoints(tableX + 155) - (invoiceAmountWidth / 2);
+    const invoiceAmountY = height - mmToPoints(contentY + 64.4);
+    
+    // Text zeichnen (bold)
+    firstPage.drawText(invoiceAmountText, {
+        x: invoiceAmountX,
+        y: invoiceAmountY,
+        size: 9,
+        font: palatinoBoldFont,
+        color: black,
+    });
+    
+    // Unterstreichung zeichnen
+    const underlineY = invoiceAmountY - 2; // 2 Points unter dem Text
+    const underlineStartX = invoiceAmountX;
+    const underlineEndX = invoiceAmountX + invoiceAmountWidth;
+    firstPage.drawLine({
+        start: { x: underlineStartX, y: underlineY },
+        end: { x: underlineEndX, y: underlineY },
+        thickness: 0.5,
+        color: black,
+    });
     
     // Ausführungszeitraum (bei "Ausführungszeitraum: KW")
-    // KW und Tag der Ausführung zusammen mit "->" dazwischen
-    const infoStartY = summaryStartY + 25;
-    doc.setFontSize(11);
-
-    const executionPeriod = `${String(invoiceData.calendar_week || "")} -> ${String(invoiceData.execution_day || "")}`;
-    doc.text(executionPeriod, 71, infoStartY + 39.2, { align: "left" });
+    const infoStartY = contentY + 15 + 25;
     
-    // PDF speichern
-    const fileName = `Iveha-Rechnung-${invoiceData.invoice_number || 'unbekannt'}-${formattedDate.replace(/\./g, '-')}.pdf`;
-    doc.save(fileName);
+    // Ausführungszeitraum-Bereich überdecken
+    firstPage.drawRectangle({
+        x: mmToPoints(60),
+        y: height - mmToPoints(infoStartY + 40),
+        width: mmToPoints(60),
+        height: mmToPoints(5),
+        color: white,
+    });
+    
+    const executionPeriod = `KW ${String(invoiceData.calendar_week || "")} -> ${String(invoiceData.execution_day || "")}`;
+    firstPage.drawText(executionPeriod, {
+        x: mmToPoints(62),
+        y: height - mmToPoints(infoStartY + 36),
+        size: 11,
+        font: palatinoBoldFont,
+        color: black,
+    });
+    
+    // PDF speichern und herunterladen
+    const modifiedPdfBytes = await pdfDoc.save();
+    const blob = new Blob([modifiedPdfBytes as BlobPart], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Iveha-Rechnung-${invoiceData.invoice_number || 'unbekannt'}-${formattedDate.replace(/\./g, '-')}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    // Quittung ebenfalls erstellen und herunterladen
+    try {
+        await generateIvehaReceiptPDF(invoiceData);
+    } catch (error) {
+        console.error('Fehler beim Erstellen der Quittung:', error);
+    }
 };
 

@@ -6,15 +6,78 @@ import { useI18n } from 'vue-i18n';
 import { Field, Form as VeeForm, ErrorMessage } from 'vee-validate';
 import * as yup from 'yup';
 import { generateIvehaInvoicePDF } from '@/Composables/generateIvehaInvoicePDF';
+import { router, usePage } from '@inertiajs/vue3';
+import dayjs from 'dayjs';
 
 const { t } = useI18n();
+const page = usePage();
+
+interface IvehaInvoice {
+    id: number;
+    invoice_date: string;
+    invoice_number: string;
+    project_number: string;
+    construction_address: string;
+    description: string;
+    qm: number;
+    persons: number;
+    hours: number;
+    calendar_week: string;
+    execution_day: string;
+    total_price: number;
+    total_sum: number;
+    skonto: number;
+    invoice_amount: number;
+    created_at: string;
+}
+
+const props = defineProps<{
+    invoices?: IvehaInvoice[];
+    totalAmount?: number;
+}>();
+
+// Suchfunktion
+const searchQuery = ref('');
+
+// Gefilterte und sortierte Rechnungen
+const filteredInvoices = computed(() => {
+    if (!props.invoices) return [];
+    
+    let filtered = [...props.invoices];
+    
+    // Suche anwenden
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(invoice => 
+            invoice.invoice_number.toLowerCase().includes(query) ||
+            invoice.project_number.toLowerCase().includes(query) ||
+            invoice.construction_address.toLowerCase().includes(query) ||
+            invoice.description.toLowerCase().includes(query)
+        );
+    }
+    
+    // Sortierung nach Rechnungsnummer (aufsteigend)
+    filtered.sort((a, b) => {
+        // Extrahiere die Nummer aus der Rechnungsnummer (z.B. "148" aus "148" oder "RG2024-148")
+        const numA = parseInt(a.invoice_number.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.invoice_number.replace(/\D/g, '')) || 0;
+        return numA - numB;
+    });
+    
+    return filtered;
+});
+
+// Gesamtbetrag der gefilterten Rechnungen
+const filteredTotalAmount = computed(() => {
+    return filteredInvoices.value.reduce((sum, invoice) => sum + parseFloat(invoice.invoice_amount.toString()), 0);
+});
 
 const formData = ref({
     invoice_date: '2025-09-11',
     invoice_number: '148',
     project_number: '250010',
     construction_address: 'Halle Wienkemeier, Klus 6a, 32825 Blomb',
-    description: 'Bauhilfe für 750 qm - 2 Personen',
+    description: '',
     qm: '750',
     persons: '2',
     hours: '4',
@@ -63,8 +126,20 @@ const invoiceAmount = computed(() => {
 // Vorlage für Bezeichnung generieren
 const generateDescriptionTemplate = () => {
     const qm = formData.value.qm || '';
-    const persons = formData.value.persons || '4';
-    return `Bauhilfe für ${qm} qm - ${persons} Person${persons !== '1' ? 'en' : ''}`;
+    const persons = formData.value.persons || '';
+    if (!qm && !persons) {
+        return '';
+    }
+    const personsText = persons ? `${persons} Person${persons !== '1' ? 'en' : ''}` : '';
+    const qmText = qm ? `${qm} qm` : '';
+    if (qmText && personsText) {
+        return `Bauhilfe für ${qmText} - ${personsText}`;
+    } else if (qmText) {
+        return `Bauhilfe für ${qmText}`;
+    } else if (personsText) {
+        return `Bauhilfe - ${personsText}`;
+    }
+    return '';
 };
 
 // Bezeichnung aktualisieren wenn qm oder Personenanzahl geändert wird
@@ -133,8 +208,75 @@ const handleDownload = async () => {
         invoice_amount: parseFloat(invoiceAmount.value)
     };
     
+    // Rechnung in Datenbank speichern
+    router.post('/iveha-invoices', invoiceData, {
+        onSuccess: () => {
+            // PDF generieren und herunterladen
+            generateIvehaInvoicePDF(invoiceData);
+            // Notification wird durch Flash-Message vom Backend angezeigt
+        },
+        onError: (errors) => {
+            console.error('Fehler beim Speichern der Rechnung:', errors);
+            notificationMessage.value = 'Fehler beim Speichern der Rechnung.';
+            showNotification.value = true;
+            setTimeout(() => {
+                showNotification.value = false;
+                notificationMessage.value = '';
+            }, 5000);
+        }
+    });
+};
+
+// Rechnung erneut herunterladen
+const handleDownloadInvoice = async (invoice: IvehaInvoice) => {
+    const invoiceData = {
+        invoice_date: invoice.invoice_date,
+        invoice_number: invoice.invoice_number,
+        project_number: invoice.project_number,
+        construction_address: invoice.construction_address,
+        description: invoice.description,
+        qm: invoice.qm.toString(),
+        persons: invoice.persons.toString(),
+        hours: invoice.hours.toString(),
+        calendar_week: invoice.calendar_week,
+        execution_day: invoice.execution_day,
+        total_price: invoice.total_price,
+        total_sum: invoice.total_sum,
+        skonto: invoice.skonto,
+        invoice_amount: invoice.invoice_amount
+    };
+    
+    // PDF generieren und herunterladen (inkl. Quittung)
     await generateIvehaInvoicePDF(invoiceData);
 };
+
+// Rechnung löschen
+const handleDeleteInvoice = (id: number) => {
+    if (confirm('Möchten Sie diese Rechnung wirklich löschen?')) {
+        router.delete(`/iveha-invoices/${id}`, {
+            onSuccess: () => {
+                // Seite wird automatisch neu geladen
+            }
+        });
+    }
+};
+
+// Notification für Erfolgsmeldungen
+const successMessage = computed(() => page.props.flash?.success || '');
+const showNotification = ref(false);
+const notificationMessage = ref('');
+
+// Watch für Success-Message vom Backend
+watch(successMessage, (newVal) => {
+    if (newVal) {
+        notificationMessage.value = newVal;
+        showNotification.value = true;
+        setTimeout(() => {
+            showNotification.value = false;
+            notificationMessage.value = '';
+        }, 5000);
+    }
+}, { immediate: true });
 </script>
 
 <template>
@@ -147,7 +289,20 @@ const handleDownload = async () => {
         </template>
 
         <div class="py-12">
-            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <!-- Notification -->
+                <div v-if="showNotification" class="mb-6">
+                    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded dark:bg-green-900/20 dark:border-green-700 dark:text-green-300">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <p class="font-medium">{{ notificationMessage }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formular für neue Rechnung -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900 dark:text-gray-100">
                         <h3 class="text-lg font-semibold mb-6">{{ t('iveha_invoices.description') }}</h3>
@@ -183,7 +338,6 @@ const handleDownload = async () => {
                                             name="invoice_number"
                                             type="text"
                                             v-model="formData.invoice_number"
-                                            placeholder="2024-"
                                             class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                         />
                                         <ErrorMessage name="invoice_number" class="mt-1 text-sm text-red-600 dark:text-red-400" />
@@ -299,7 +453,6 @@ const handleDownload = async () => {
                                             name="calendar_week"
                                             type="text"
                                             v-model="formData.calendar_week"
-                                            placeholder="KW"
                                             class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                         />
                                         <ErrorMessage name="calendar_week" class="mt-1 text-sm text-red-600 dark:text-red-400" />
@@ -371,6 +524,98 @@ const handleDownload = async () => {
                                 </div>
                             </form>
                         </VeeForm>
+                    </div>
+                </div>
+                
+                <!-- Übersicht der Rechnungen -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                    <div class="p-6 text-gray-900 dark:text-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Ausgestellte Iveha Rechnungen</h3>
+                            <div class="w-64">
+                                <input
+                                    v-model="searchQuery"
+                                    type="text"
+                                    placeholder="Suchen (RG-Nr., Projekt, Bauvorhaben...)"
+                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+                                />
+                            </div>
+                        </div>
+                        
+                        <!-- Tabelle mit Rechnungen -->
+                        <div class="overflow-x-hidden">
+                            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 10%;">Datum</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 12%;">Rechnungsnummer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 12%;">Projektnummer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 35%;">Bauvorhaben</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 15%;">Rechnungsbetrag</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 10%;">Aktionen</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tr v-if="filteredInvoices.length === 0">
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            <span v-if="searchQuery.trim()">Keine Rechnungen gefunden</span>
+                                            <span v-else>Noch keine Rechnungen erstellt</span>
+                                        </td>
+                                    </tr>
+                                    <tr v-for="invoice in filteredInvoices" :key="invoice.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            {{ dayjs(invoice.invoice_date).format('DD.MM.YYYY') }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            {{ invoice.invoice_number }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            {{ invoice.project_number }}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-white break-words">
+                                            {{ invoice.construction_address }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ parseFloat(invoice.invoice_amount).toFixed(2) }} €
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-2">
+                                                <button
+                                                    @click="handleDownloadInvoice(invoice)"
+                                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                                    title="Rechnung und Quittung herunterladen"
+                                                >
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    @click="handleDeleteInvoice(invoice.id)"
+                                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                    title="Rechnung löschen"
+                                                >
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot v-if="filteredInvoices.length > 0" class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                                            <span v-if="searchQuery.trim()">Gesamtbetrag (gefiltert):</span>
+                                            <span v-else>Gesamtbetrag:</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                            {{ filteredTotalAmount.toFixed(2) }} €
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

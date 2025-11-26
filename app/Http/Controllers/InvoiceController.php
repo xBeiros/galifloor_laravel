@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\InvoiceMail;
 use App\Models\Invoice;
+use App\Models\IvehaInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -127,17 +128,66 @@ class InvoiceController extends Controller
      */
     public function ivehaIndex()
     {
-        return Inertia::render('IvehaInvoice/Index');
+        // Sortierung nach Rechnungsnummer (aufsteigend)
+        // Extrahiere die Nummer aus der Rechnungsnummer für die Sortierung
+        $invoices = IvehaInvoice::all()->sortBy(function($invoice) {
+            // Extrahiere die Nummer aus der Rechnungsnummer (z.B. "148" aus "148" oder "RG2024-148")
+            return (int) preg_replace('/\D/', '', $invoice->invoice_number);
+        })->values();
+        
+        $totalAmount = IvehaInvoice::sum('invoice_amount');
+        
+        return Inertia::render('IvehaInvoice/Index', [
+            'invoices' => $invoices,
+            'totalAmount' => $totalAmount
+        ]);
     }
 
     /**
-     * Iveha Rechnung speichern (optional, für spätere Verwendung).
+     * Iveha Rechnung speichern.
      */
     public function ivehaStore(Request $request)
     {
-        // Die Daten werden nur für die PDF-Generierung verwendet
-        // Keine Validierung erforderlich, da die PDF-Generierung clientseitig erfolgt
-        return response()->json(['message' => 'Iveha Rechnung erfolgreich verarbeitet.']);
+        $validated = $request->validate([
+            'invoice_date' => 'required|date',
+            'invoice_number' => 'required|string',
+            'project_number' => 'required|string',
+            'construction_address' => 'required|string',
+            'description' => 'required|string',
+            'qm' => 'required|numeric|min:0',
+            'persons' => 'required|integer|min:1',
+            'hours' => 'required|numeric|min:0',
+            'calendar_week' => 'required|string',
+            'execution_day' => 'required|string',
+            'total_price' => 'required|numeric',
+            'total_sum' => 'required|numeric',
+            'skonto' => 'required|numeric',
+            'invoice_amount' => 'required|numeric',
+        ]);
+
+        $invoice = IvehaInvoice::create($validated);
+
+        return redirect()->route('iveha-invoices.index')->with('success', 'Rechnung erfolgreich ausgestellt.');
+    }
+
+    /**
+     * Iveha Rechnung löschen.
+     */
+    public function ivehaDestroy($id)
+    {
+        $invoice = IvehaInvoice::findOrFail($id);
+        $invoice->delete();
+
+        return redirect()->route('iveha-invoices.index')->with('success', 'Rechnung wurde erfolgreich gelöscht.');
+    }
+
+    /**
+     * Iveha Rechnung Daten für Download zurückgeben.
+     */
+    public function ivehaShow($id)
+    {
+        $invoice = IvehaInvoice::findOrFail($id);
+        return response()->json($invoice);
     }
 
 }

@@ -395,7 +395,7 @@
             "week": "Woche",
             "day": "Tag der Ausführung",
             "create": "Rechnung erstellen",
-            "download": "PDF herunterladen"
+            "download": "PDF Ausstellen"
         },
         "auto_calculated": "Automatisch berechnet"
     }
