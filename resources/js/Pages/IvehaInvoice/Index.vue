@@ -184,7 +184,7 @@ const onSubmit = async (values: any) => {
 };
 
 const handleDownload = async () => {
-    // Validierung vor dem Download
+    // Validierung vor dem Speichern
     if (!formData.value.invoice_date || !formData.value.invoice_number || 
         !formData.value.project_number || !formData.value.construction_address ||
         !formData.value.description || !formData.value.qm || !formData.value.persons || !formData.value.hours ||
@@ -201,12 +201,17 @@ const handleDownload = async () => {
         invoice_amount: parseFloat(invoiceAmount.value)
     };
     
-    // Rechnung in Datenbank speichern
+    // Rechnung in Datenbank speichern (ohne PDF-Download)
     router.post('/iveha-invoices', invoiceData, {
         onSuccess: () => {
-            // PDF generieren und herunterladen
-            generateIvehaInvoicePDF(invoiceData);
-            // Notification wird durch Flash-Message vom Backend angezeigt
+            // Notification anzeigen
+            notificationMessage.value = 'Rechnung erfolgreich ausgestellt.';
+            showNotification.value = true;
+            setTimeout(() => {
+                showNotification.value = false;
+                notificationMessage.value = '';
+            }, 5000);
+            // Die Liste wird automatisch aktualisiert
         },
         onError: (errors) => {
             console.error('Fehler beim Speichern der Rechnung:', errors);

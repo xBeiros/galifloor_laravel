@@ -84,7 +84,7 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
         // Verifiziere, dass die Fonts korrekt geladen wurden
         if (!palatinoFont || !palatinoBoldFont) {
             throw new Error('Fonts konnten nicht eingebettet werden');
-        }
+                }
         
         // Test: Prüfe ob Fonts funktionieren
         const testWidth = palatinoFont.widthOfTextAtSize('Test', 12);
@@ -115,44 +115,6 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     
     // Textfarbe setzen (schwarz)
     const black = rgb(0, 0, 0);
-    const white = rgb(1, 1, 1);
-    
-    // Vorhandene Texte in der Vorlage mit weißen Rechtecken überdecken
-    // Datum-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(150),
-        y: height - mmToPoints(90),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Projektnummer-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(40),
-        y: height - mmToPoints(128),
-        width: mmToPoints(30),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Bauvorhaben-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(40),
-        y: height - mmToPoints(145),
-        width: mmToPoints(160),
-        height: mmToPoints(15),
-        color: white,
-    });
-    
-    // Rechnungsnummer-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(150),
-        y: height - mmToPoints(110),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
     
     // Datum (rechts oben, bei "Datum:")
     // Position: x=162mm, y=81.1mm (von oben, daher height - y)
@@ -225,70 +187,6 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     const tableX = 15;
     const contentY = tableStartY + 8;
     
-    // Vorhandene Texte in der Tabellenbereichen mit weißen Rechtecken überdecken
-    // Bezeichnung-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 15),
-        y: height - mmToPoints(contentY + 50),
-        width: mmToPoints(120),
-        height: mmToPoints(20),
-        color: white,
-    });
-    
-    // Stunden-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 100),
-        y: height - mmToPoints(contentY + 50),
-        width: mmToPoints(15),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Pro Stunde-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 125),
-        y: height - mmToPoints(contentY + 50),
-        width: mmToPoints(15),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Gesamtpreis-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 150),
-        y: height - mmToPoints(contentY + 50),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Gesamtsumme-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 150),
-        y: height - mmToPoints(contentY + 58),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Skonto-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 150),
-        y: height - mmToPoints(contentY + 63),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
-    // Rechnungsbetrag-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(tableX + 150),
-        y: height - mmToPoints(contentY + 69),
-        width: mmToPoints(20),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
     // Berechne Stunden pro Person für die Bezeichnung
     const totalHours = parseFloat(invoiceData.hours || "0");
     const persons = parseFloat(invoiceData.persons || "1");
@@ -296,7 +194,8 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     
     // Bezeichnung (bei "Bezeichnung" Spalte) - mit "X Personen à Y Stunden" erweitern
     const baseDescription = String(invoiceData.description || "");
-    const descriptionWithHours = `${baseDescription} à ${hoursPerPerson} Std.`;
+    const hoursPerPersonFormatted = Math.round(hoursPerPerson).toString();
+    const descriptionWithHours = `${baseDescription} à ${hoursPerPersonFormatted} Std.`;
     
     // Text aufteilen falls zu lang
     const maxDescWidthPoints = mmToPoints(120); // Maximale Breite für Bezeichnung
@@ -330,7 +229,7 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     });
     
     // Stunden (bei "Stunden" Spalte) - Gesamtanzahl der Stunden - zentriert
-    const hoursText = String(totalHours);
+    const hoursText = Math.round(totalHours).toString();
     const hoursTextWidth = palatinoBoldFont.widthOfTextAtSize(hoursText, 11);
     firstPage.drawText(hoursText, {
         x: mmToPoints(tableX + 105.5) - (hoursTextWidth / 2),
@@ -412,16 +311,6 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     
     // Ausführungszeitraum (bei "Ausführungszeitraum: KW")
     const infoStartY = contentY + 15 + 25;
-    
-    // Ausführungszeitraum-Bereich überdecken
-    firstPage.drawRectangle({
-        x: mmToPoints(60),
-        y: height - mmToPoints(infoStartY + 40),
-        width: mmToPoints(60),
-        height: mmToPoints(5),
-        color: white,
-    });
-    
     const executionPeriod = `KW ${String(invoiceData.calendar_week || "")} -> ${String(invoiceData.execution_day || "")}`;
     firstPage.drawText(executionPeriod, {
         x: mmToPoints(62),
@@ -442,6 +331,9 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    
+    // Kurze Verzögerung vor dem Download der Quittung, damit der Browser beide Downloads nicht blockiert
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     // Quittung ebenfalls erstellen und herunterladen
     try {
