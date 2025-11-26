@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Field, Form as VeeForm, ErrorMessage } from 'vee-validate';
 import * as yup from 'yup';
@@ -73,16 +73,16 @@ const filteredTotalAmount = computed(() => {
 });
 
 const formData = ref({
-    invoice_date: '2025-09-11',
-    invoice_number: '148',
-    project_number: '250010',
-    construction_address: 'Halle Wienkemeier, Klus 6a, 32825 Blomb',
+    invoice_date: '',
+    invoice_number: '',
+    project_number: '',
+    construction_address: '',
     description: '',
-    qm: '750',
-    persons: '2',
-    hours: '4',
-    calendar_week: '31',
-    execution_day: '28.07.2025'
+    qm: '',
+    persons: '',
+    hours: '',
+    calendar_week: '',
+    execution_day: ''
 });
 
 const validationSchema = yup.object({
@@ -169,13 +169,6 @@ watch([() => formData.value.qm, () => formData.value.persons], () => {
     if (!isManualEdit.value && (formData.value.qm || formData.value.persons)) {
         updateDescriptionFromTemplate();
     }
-}, { immediate: true });
-
-// Setze initiale Bezeichnung basierend auf den Standardwerten
-onMounted(() => {
-    if (formData.value.qm && formData.value.persons) {
-        formData.value.description = generateDescriptionTemplate();
-    }
 });
 
 const onSubmit = async (values: any) => {
@@ -253,7 +246,7 @@ const handleDownloadInvoice = async (invoice: IvehaInvoice) => {
 // Rechnung löschen
 const handleDeleteInvoice = (id: number) => {
     if (confirm('Möchten Sie diese Rechnung wirklich löschen?')) {
-        router.delete(`/iveha-invoices/${id}`, {
+        router.delete(`/iveha-invoices/${id.toString()}`, {
             onSuccess: () => {
                 // Seite wird automatisch neu geladen
             }
@@ -262,7 +255,10 @@ const handleDeleteInvoice = (id: number) => {
 };
 
 // Notification für Erfolgsmeldungen
-const successMessage = computed(() => page.props.flash?.success || '');
+const successMessage = computed(() => {
+    const flash = page.props.flash as { success?: string } | undefined;
+    return flash?.success || '';
+});
 const showNotification = ref(false);
 const notificationMessage = ref('');
 
