@@ -246,7 +246,7 @@ const handleDownloadInvoice = async (invoice: IvehaInvoice) => {
 // Rechnung löschen
 const handleDeleteInvoice = (id: number) => {
     if (confirm('Möchten Sie diese Rechnung wirklich löschen?')) {
-        router.delete(`/iveha-invoices/${id.toString()}`, {
+        router.delete(route('iveha-invoices.destroy', id.toString()), {
             onSuccess: () => {
                 // Seite wird automatisch neu geladen
             }
@@ -572,7 +572,7 @@ watch(successMessage, (newVal) => {
                                             {{ invoice.construction_address }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                            {{ parseFloat(invoice.invoice_amount).toFixed(2) }} €
+                                            {{ Number(invoice.invoice_amount).toFixed(2) }} €
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
