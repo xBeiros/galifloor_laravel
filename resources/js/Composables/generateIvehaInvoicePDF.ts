@@ -175,8 +175,8 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     if (invoiceNumber) {
         firstPage.drawText(invoiceNumber, {
             x: mmToPoints(153.8),
-            y: height - mmToPoints(106.8),
-            size: 11,
+            y: height - mmToPoints(107),
+            size: 10,
             font: palatinoBoldFont,
             color: black,
         });
