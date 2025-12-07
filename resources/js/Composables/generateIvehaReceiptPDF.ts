@@ -200,7 +200,7 @@ const createSingleReceipt = async (
     
     // für (links)
     const invoiceYear = invoiceData.invoice_date ? invoiceData.invoice_date.split('-')[0] : '2024';
-    let forText = `Iveha Floor GmbH - RG${invoiceYear-1}-B${invoiceData.invoice_number || ''}`;
+    let forText = `Iveha Floor GmbH - RG${invoiceYear}-B${invoiceData.invoice_number || ''}`;
     // Bei mehreren Quittungen: Nummer/Gesamtanzahl hinzufügen
     if (totalReceipts > 1) {
         forText += ` ${receiptNumber}/${totalReceipts}`;
