@@ -133,6 +133,7 @@ Route::get('/language/{locale}', [LanguageController::class, 'switchLanguage'])
 Route::get('/iveha-invoices', [InvoiceController::class, 'ivehaIndex'])->middleware(['auth', 'verified'])->name('iveha-invoices.index');
 Route::post('/iveha-invoices', [InvoiceController::class, 'ivehaStore'])->middleware(['auth', 'verified'])->name('iveha-invoices.store');
 Route::get('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaShow'])->middleware(['auth', 'verified'])->name('iveha-invoices.show');
+Route::put('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaUpdate'])->middleware(['auth', 'verified'])->name('iveha-invoices.update');
 Route::delete('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaDestroy'])->middleware(['auth', 'verified'])->name('iveha-invoices.destroy');
 
 
