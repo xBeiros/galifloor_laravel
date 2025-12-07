@@ -219,4 +219,24 @@ class InvoiceController extends Controller
         return redirect()->route('iveha-invoices.index')->with('success', 'Rechnung wurde erfolgreich aktualisiert.');
     }
 
+    /**
+     * Iveha Rechnung Check-Status umschalten.
+     */
+    public function ivehaToggleChecked($id)
+    {
+        $invoice = IvehaInvoice::findOrFail($id);
+        $invoice->is_checked = !$invoice->is_checked;
+        $invoice->save();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_checked' => $invoice->is_checked,
+                'message' => $invoice->is_checked ? 'Rechnung als abgehakt markiert.' : 'Markierung entfernt.'
+            ]);
+        }
+
+        return redirect()->route('iveha-invoices.index')->with('success', $invoice->is_checked ? 'Rechnung als abgehakt markiert.' : 'Markierung entfernt.');
+    }
+
 }

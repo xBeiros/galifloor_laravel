@@ -29,6 +29,7 @@ interface IvehaInvoice {
     total_sum: number;
     skonto: number;
     invoice_amount: number;
+    is_checked: boolean;
     created_at: string;
 }
 
@@ -387,6 +388,26 @@ const handleUpdateInvoice = async (values: any) => {
     });
 };
 
+// Rechnung abhaken/abhaken aufheben
+const handleToggleChecked = (invoice: IvehaInvoice) => {
+    router.patch(route('iveha-invoices.toggle-checked', invoice.id.toString()), {}, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            // Status wird automatisch aktualisiert durch Inertia
+        },
+        onError: (errors) => {
+            console.error('Fehler beim Ändern des Status:', errors);
+            notificationMessage.value = 'Fehler beim Ändern des Status.';
+            showNotification.value = true;
+            setTimeout(() => {
+                showNotification.value = false;
+                notificationMessage.value = '';
+            }, 5000);
+        }
+    });
+};
+
 // Notification für Erfolgsmeldungen
 const successMessage = computed(() => {
     const flash = page.props.flash as { success?: string } | undefined;
@@ -676,22 +697,32 @@ watch(successMessage, (newVal) => {
                             <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 10%;">Datum</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 12%;">Rechnungsnummer</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 12%;">Projektnummer</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 35%;">Bauvorhaben</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 15%;">Rechnungsbetrag</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 5%;">✓</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 9%;">Datum</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 11%;">Rechnungsnummer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 11%;">Projektnummer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 30%;">Bauvorhaben</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 14%;">Rechnungsbetrag</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style="width: 10%;">Aktionen</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     <tr v-if="filteredInvoices.length === 0">
-                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                             <span v-if="searchQuery.trim()">Keine Rechnungen gefunden</span>
                                             <span v-else>Noch keine Rechnungen erstellt</span>
                                         </td>
                                     </tr>
-                                    <tr v-for="invoice in filteredInvoices" :key="invoice.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <tr v-for="invoice in filteredInvoices" :key="invoice.id" :class="['hover:bg-gray-50 dark:hover:bg-gray-700', invoice.is_checked ? 'bg-green-50 dark:bg-green-900/20' : '']">
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <input
+                                                type="checkbox"
+                                                :checked="invoice.is_checked || false"
+                                                @change="handleToggleChecked(invoice)"
+                                                class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-indigo-500 cursor-pointer"
+                                                title="Rechnung abhaken"
+                                            />
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             {{ dayjs(invoice.invoice_date).format('DD.MM.YYYY') }}
                                         </td>
@@ -742,7 +773,7 @@ watch(successMessage, (newVal) => {
                                 </tbody>
                                 <tfoot v-if="filteredInvoices.length > 0" class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                                        <td colspan="5" class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">
                                             <span v-if="searchQuery.trim()">Gesamtbetrag (gefiltert):</span>
                                             <span v-else>Gesamtbetrag:</span>
                                         </td>

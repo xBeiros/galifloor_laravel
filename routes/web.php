@@ -134,6 +134,7 @@ Route::get('/iveha-invoices', [InvoiceController::class, 'ivehaIndex'])->middlew
 Route::post('/iveha-invoices', [InvoiceController::class, 'ivehaStore'])->middleware(['auth', 'verified'])->name('iveha-invoices.store');
 Route::get('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaShow'])->middleware(['auth', 'verified'])->name('iveha-invoices.show');
 Route::put('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaUpdate'])->middleware(['auth', 'verified'])->name('iveha-invoices.update');
+Route::patch('/iveha-invoices/{id}/toggle-checked', [InvoiceController::class, 'ivehaToggleChecked'])->middleware(['auth', 'verified'])->name('iveha-invoices.toggle-checked');
 Route::delete('/iveha-invoices/{id}', [InvoiceController::class, 'ivehaDestroy'])->middleware(['auth', 'verified'])->name('iveha-invoices.destroy');
 
 
