@@ -171,7 +171,7 @@ export const generateIvehaInvoicePDF = async (invoiceData: any) => {
     });
     
     // Rechnungsnummer (bei "Re. Nr.:")
-    const invoiceNumber = String(invoiceData.invoice_number || "");
+    const invoiceNumber = String('B',invoiceData.invoice_number || "");
     if (invoiceNumber) {
         firstPage.drawText(invoiceNumber, {
             x: mmToPoints(153.8),
