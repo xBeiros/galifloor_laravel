@@ -21,6 +21,7 @@ class IvehaInvoice extends Model
         'total_sum',
         'skonto',
         'invoice_amount',
+        'is_checked',
     ];
 
     protected $casts = [
@@ -31,5 +32,6 @@ class IvehaInvoice extends Model
         'total_sum' => 'decimal:2',
         'skonto' => 'decimal:2',
         'invoice_amount' => 'decimal:2',
+        'is_checked' => 'boolean',
     ];
 }

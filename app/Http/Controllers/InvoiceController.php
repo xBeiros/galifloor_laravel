@@ -190,4 +190,53 @@ class InvoiceController extends Controller
         return response()->json($invoice);
     }
 
+    /**
+     * Iveha Rechnung aktualisieren.
+     */
+    public function ivehaUpdate(Request $request, $id)
+    {
+        $invoice = IvehaInvoice::findOrFail($id);
+
+        $validated = $request->validate([
+            'invoice_date' => 'required|date',
+            'invoice_number' => 'required|string',
+            'project_number' => 'required|string',
+            'construction_address' => 'required|string',
+            'description' => 'required|string',
+            'qm' => 'required|numeric|min:0',
+            'persons' => 'required|integer|min:1',
+            'hours' => 'required|numeric|min:0',
+            'calendar_week' => 'required|string',
+            'execution_day' => 'required|string',
+            'total_price' => 'required|numeric',
+            'total_sum' => 'required|numeric',
+            'skonto' => 'required|numeric',
+            'invoice_amount' => 'required|numeric',
+        ]);
+
+        $invoice->update($validated);
+
+        return redirect()->route('iveha-invoices.index')->with('success', 'Rechnung wurde erfolgreich aktualisiert.');
+    }
+
+    /**
+     * Iveha Rechnung Check-Status umschalten.
+     */
+    public function ivehaToggleChecked($id)
+    {
+        $invoice = IvehaInvoice::findOrFail($id);
+        $invoice->is_checked = !$invoice->is_checked;
+        $invoice->save();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_checked' => $invoice->is_checked,
+                'message' => $invoice->is_checked ? 'Rechnung als abgehakt markiert.' : 'Markierung entfernt.'
+            ]);
+        }
+
+        return redirect()->route('iveha-invoices.index')->with('success', $invoice->is_checked ? 'Rechnung als abgehakt markiert.' : 'Markierung entfernt.');
+    }
+
 }
