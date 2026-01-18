@@ -118,7 +118,7 @@ const onSubmit = async (values) => {
             end_date: formattedEndDate,
         };
         
-        await performanceStore.addPerformance(performanceData, props.order_number, formattedStartDate);
+        await performanceStore.addPerformance(performanceData, props.invoice.id, formattedStartDate);
         
         // Formular zurücksetzen
         flatrate.value = false;

@@ -73,7 +73,10 @@ class PerformanceController extends Controller
         }
         $invoice->save();
 
-        return response()->json($performances, 201);
+        // Lade die Performance mit allen Beziehungen neu
+        $performance->refresh();
+
+        return response()->json([$performance], 201);
     }
 
     /**
