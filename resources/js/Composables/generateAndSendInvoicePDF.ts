@@ -96,9 +96,10 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     doc.text(order.construction, 15, bauvorhabenStartY + 5.5);
     doc.text(order.address, 15, bauvorhabenStartY + 8.5);
     doc.text(order.postal + " " + order.city, 15, bauvorhabenStartY + 11.5);
+    doc.text(order.city, 15, bauvorhabenStartY + 14.5);
 
     // Tabelle - Startposition dynamisch anpassen
-    const tableStartY = bauvorhabenStartY + 15; // Abstand nach Anschrift
+    const tableStartY = bauvorhabenStartY + 18; // Abstand nach Anschrift (mehr Platz für Stadt)
     doc.setFillColor(220, 230, 255); // Hellblauer Hintergrund
     doc.rect(15, tableStartY, 180, 5, "F");
     doc.setFontSize(8);
