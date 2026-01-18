@@ -41,8 +41,8 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     doc.text(order?.company?.name, 15, 37);
     doc.setFont("helvetica", "normal")
     //doc.text(order.company?.name_description, 15, 40);
-    doc.text(order.company.address, 15, 44);
-    doc.text(order.company.postal + " " + order.company.city, 15, 48);
+    doc.text(order.company.address, 15, 42);
+    doc.text(order.company.postal + " " + order.company.city, 15, 45);
 
     doc.setFillColor(220, 230, 255);
     doc.rect(15, 55, 100, 7, "F");
