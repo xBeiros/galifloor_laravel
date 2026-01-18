@@ -164,9 +164,11 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
             doc.setTextColor(81,82,84);
         } else {
             doc.text(`${performancePrice.toFixed(2)} €`, 150, y);
+            const qm = Number(performance.qm) || 0;
+            const price = Number(performance.price) || 0;
             const total = performance.flatrate
-                ? performance.price
-                : performance.qm * performance.price;
+                ? price
+                : qm * price;
             totalAmount += total;
             const totalPrice = Number(total) || 0; // Falls price null, undefined oder String ist → 0 setzen
 
@@ -191,13 +193,15 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     // Sicherheitsleistung anzeigen
     doc.setFont("helvetica", "normal");
     doc.text("Sicherheitsleistung", 17, totalY + 10); // Text für Sicherheitsleistung
-    doc.text(order.company.security_service + " %", 150, totalY + 10, { align: "right" }); // Prozentwert
-    const securityService = totalAmount / 100 * order.company.security_service;
+    const securityServicePercent = Number(order.company.security_service) || 0;
+    doc.text(securityServicePercent + " %", 150, totalY + 10, { align: "right" }); // Prozentwert
+    const securityService = totalAmount / 100 * securityServicePercent;
     doc.text(`${securityService.toFixed(2)} €`, 193, totalY + 10, { align: "right" });
 
     doc.text("Skonto", 17, totalY + 14); // Text für Sicherheitsleistung
-    doc.text(order.company.cash_discount + " %", 150, totalY + 14, { align: "right" }); // Prozentwert
-    const cashDiscount = totalAmount / 100 * order.company.cash_discount;
+    const cashDiscountPercent = Number(order.company.cash_discount) || 0;
+    doc.text(cashDiscountPercent + " %", 150, totalY + 14, { align: "right" }); // Prozentwert
+    const cashDiscount = totalAmount / 100 * cashDiscountPercent;
     doc.text(`${cashDiscount.toFixed(2)} €`, 193, totalY + 14, { align: "right" });
 
     doc.setFillColor(220, 230, 255); // Hellblauer Hintergrund
