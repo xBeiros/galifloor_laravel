@@ -50,6 +50,19 @@
             "end_date": "Bitiş Tarihi",
             "submit": "Gönder"
         },
+        "filter": {
+            "status": "Durum",
+            "all_statuses": "Tüm Durumlar",
+            "invoice_number": "Fatura Numarası",
+            "search_invoice_number": "Fatura numarası ara...",
+            "city": "Şehir",
+            "search_city": "Şehir ara...",
+            "company": "Şirket",
+            "search_company": "Şirket adı ara...",
+            "showing": "Gösteriliyor",
+            "of": "/",
+            "invoices": "fatura"
+        },
         "show": {
             "title": "Sipariş",
             "preview_invoice": "Fatura Önizleme",

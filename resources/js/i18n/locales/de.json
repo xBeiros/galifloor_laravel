@@ -51,6 +51,19 @@
             "end_date": "Enddatum",
             "submit": "Abschicken"
         },
+        "filter": {
+            "status": "Status",
+            "all_statuses": "Alle Status",
+            "invoice_number": "Rechnungsnummer",
+            "search_invoice_number": "Rechnungsnummer suchen...",
+            "city": "Ort",
+            "search_city": "Ort suchen...",
+            "company": "Firma",
+            "search_company": "Firmenname suchen...",
+            "showing": "Zeige",
+            "of": "von",
+            "invoices": "Rechnungen"
+        },
         "show": {
             "title": "Auftrag",
             "preview_invoice": "Rechnung Vorschau",

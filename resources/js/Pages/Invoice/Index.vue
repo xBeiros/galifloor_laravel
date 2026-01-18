@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import ShowInvoice from './Show.vue'
-import { PlusIcon } from "@heroicons/vue/24/outline";
+import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
 import {
     Dialog,
     DialogOverlay,
@@ -13,7 +13,7 @@ import {
 } from "@headlessui/vue";
 import { ErrorMessage, Field, Form as VeeForm } from "vee-validate";
 import * as yup from "yup";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import axios from "axios";
 import { router } from "@inertiajs/vue3";
 import { useI18n } from 'vue-i18n';
@@ -25,6 +25,50 @@ const { t } = useI18n();
 const open = ref(false);
 const companies = ref([]);
 const invoices = ref([]);
+
+// Filter und Suchfelder
+const searchInvoiceNumber = ref("");
+const searchCity = ref("");
+const searchCompanyName = ref("");
+const selectedStatus = ref("");
+
+// Verfügbare Status-Optionen
+const statusOptions = [
+    { value: "", label: t('invoices.filter.all_statuses') },
+    { value: "in_progress", label: t('invoices.show.status.in_progress') },
+    { value: "waiting_for_invoice", label: t('invoices.show.status.waiting_for_invoice') },
+    { value: "invoice_sent", label: t('invoices.show.status.invoice_sent') },
+    { value: "completed", label: t('invoices.show.status.completed') },
+    { value: "canceled", label: t('invoices.show.status.canceled') },
+];
+
+// Gefilterte Rechnungen
+const filteredInvoices = computed(() => {
+    return invoices.value.filter((invoice) => {
+        // Filter nach Status
+        if (selectedStatus.value && invoice.status !== selectedStatus.value) {
+            return false;
+        }
+
+        // Suche nach Rechnungsnummer (year-order_number)
+        const invoiceNumber = `${invoice.year}-${invoice.order_number}`;
+        if (searchInvoiceNumber.value && !invoiceNumber.toLowerCase().includes(searchInvoiceNumber.value.toLowerCase())) {
+            return false;
+        }
+
+        // Suche nach Stadt
+        if (searchCity.value && !invoice.city?.toLowerCase().includes(searchCity.value.toLowerCase())) {
+            return false;
+        }
+
+        // Suche nach Firmenname
+        if (searchCompanyName.value && !invoice?.company?.name?.toLowerCase().includes(searchCompanyName.value.toLowerCase())) {
+            return false;
+        }
+
+        return true;
+    });
+});
 
 const fetchCompanies = async () => {
     try {
@@ -68,6 +112,15 @@ const goToInvoice = async (invoiceId) => {
     }
 };
 
+const schema = yup.object({
+    project_number: yup.string().required(),
+    company_id: yup.number().required(),
+    construction: yup.string().required(),
+    address: yup.string().required(),
+    postal: yup.string().required(),
+    city: yup.string().required(),
+});
+
 onMounted(async () => {
     await fetchCompanies();
     await fetchInvoices();
@@ -99,6 +152,90 @@ onMounted(async () => {
                     </button>
                 </div>
             </div>
+            
+            <!-- Filter und Suchfelder -->
+            <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Status Filter -->
+                    <div>
+                        <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ t('invoices.filter.status') }}
+                        </label>
+                        <select
+                            id="status-filter"
+                            v-model="selectedStatus"
+                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                        >
+                            <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                                {{ option.label }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Suche Rechnungsnummer -->
+                    <div>
+                        <label for="search-invoice-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ t('invoices.filter.invoice_number') }}
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                            </div>
+                            <input
+                                id="search-invoice-number"
+                                v-model="searchInvoiceNumber"
+                                type="text"
+                                :placeholder="t('invoices.filter.search_invoice_number')"
+                                class="block w-full pl-10 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Suche Stadt -->
+                    <div>
+                        <label for="search-city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ t('invoices.filter.city') }}
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                            </div>
+                            <input
+                                id="search-city"
+                                v-model="searchCity"
+                                type="text"
+                                :placeholder="t('invoices.filter.search_city')"
+                                class="block w-full pl-10 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Suche Firmenname -->
+                    <div>
+                        <label for="search-company" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ t('invoices.filter.company') }}
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                            </div>
+                            <input
+                                id="search-company"
+                                v-model="searchCompanyName"
+                                type="text"
+                                :placeholder="t('invoices.filter.search_company')"
+                                class="block w-full pl-10 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ergebnis-Anzeige -->
+                <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{ t('invoices.filter.showing') }} {{ filteredInvoices.length }} {{ t('invoices.filter.of') }} {{ invoices.length }} {{ t('invoices.filter.invoices') }}
+                </div>
+            </div>
+
             <div class="mt-8 flow-root">
                 <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -115,7 +252,7 @@ onMounted(async () => {
                             </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="(invoice, invoiceIdx) in invoices" :key="invoice.id" @click="goToInvoice(invoice.id)" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
+                            <tr v-for="(invoice, invoiceIdx) in filteredInvoices" :key="invoice.id" @click="goToInvoice(invoice.id)" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap py-4 pr-3 text-sm font-medium text-gray-900 dark:text-white']">{{ invoice.year }}-{{invoice.order_number}}</td>
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 sm:table-cell']">{{ invoice.project_number }}</td>
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 lg:table-cell']">{{ invoice?.company?.name }}</td>
