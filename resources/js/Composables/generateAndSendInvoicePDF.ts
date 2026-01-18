@@ -41,7 +41,7 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     doc.setFontSize(12);
     doc.text("Rechnung Nr. ", 17, 60);
     doc.setTextColor(0,0,155);
-    doc.text(order.year + "-" +order.id, 45, 60);
+    doc.text(order.year + "-" + order.order_number, 45, 60);
     doc.setTextColor(81,82,84);
     doc.setFontSize(10);
     doc.text("Hamm, " + aktuellesDatum, 175, 60, { align: "right" });

@@ -50,7 +50,7 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     doc.setFontSize(12);
     doc.text("Rechnung Nr. ", 17, 60);
     doc.setTextColor(0,0,155);
-    doc.text(order.year + "-" +order.id, 45, 60);
+    doc.text(order.year + "-" + order.order_number, 45, 60);
     doc.setTextColor(81,82,84);
     doc.setFontSize(10);
     doc.text("Hamm, " + aktuellesDatum, 175, 60, { align: "right" });
@@ -304,6 +304,6 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
         setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
     } else {
         // Für Download: PDF direkt speichern
-        doc.save("Rechnung-" + order.company.name + "-" + order.year + "-" + order.id + ".pdf");
+        doc.save("Rechnung-" + order.company.name + "-" + order.year + "-" + order.order_number + ".pdf");
     }
 };
