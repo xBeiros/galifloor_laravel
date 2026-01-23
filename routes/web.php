@@ -97,6 +97,10 @@ Route::get('/invoices', function () {
     return Inertia::render('Invoice/Index');
 })->middleware(['auth', 'verified'])->name('invoices');
 
+Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('invoices.destroy');
+
 Route::get('/companies', [CompanyController::class, 'index'])->middleware(['auth', 'verified'])->name('companies');
 Route::get('/company/details', [CompanyController::class, 'showAll'])->middleware(['auth', 'verified'])->name('company.details');
 Route::put('/company/details', [CompanyController::class, 'updateOwnCompany'])->middleware(['auth', 'verified'])->name('company.details.update');

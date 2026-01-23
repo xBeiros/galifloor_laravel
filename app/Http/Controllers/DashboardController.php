@@ -19,12 +19,18 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // Statistiken
+        // Statistiken - alle nur für das aktuelle Jahr
         $statistics = [
             'total_current_year' => $currentYearInvoices->count(),
-            'open' => Invoice::whereIn('status', ['in_progress', 'invoice_sent'])->count(),
-            'completed' => Invoice::where('status', 'completed')->count(),
-            'canceled' => Invoice::where('status', 'canceled')->count(),
+            'open' => Invoice::where('year', $currentYear)
+                ->whereIn('status', ['in_progress', 'invoice_sent'])
+                ->count(),
+            'completed' => Invoice::where('year', $currentYear)
+                ->where('status', 'completed')
+                ->count(),
+            'canceled' => Invoice::where('year', $currentYear)
+                ->where('status', 'canceled')
+                ->count(),
         ];
         
         return Inertia::render('Dashboard', [

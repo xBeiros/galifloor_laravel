@@ -121,7 +121,7 @@ export function buildInvoiceData(order: any, ownCompany: any): InvoiceData {
         postal: ownCompany?.postal || "59067",
         city: ownCompany?.city || "Hamm",
         country: "DE",
-        taxIdentificationNumber: ownCompany?.tax_identification_number || "322 5007 4942",
+        taxIdentificationNumber: ownCompany?.tax_identification_number || "DE5454654",
         ownerName: ownCompany?.owner_name || "Stefan Asenov",
         phone: ownCompany?.phone || "02381 / 27 95 644",
         email: ownCompany?.email,
@@ -681,37 +681,22 @@ export function generateZUGFeRDXML(invoice: InvoiceData): string {
  * 
  * ABLAUF:
  * 1. buildInvoiceData - Alle Berechnungen
- * 2. generateInvoicePDF - PDF-Generierung (Preview)
+ * 2. generateInvoicePDF - PDF-Generierung
  * 3. generateZUGFeRDXML - XML-Generierung
  * 4. XML ins PDF einbetten
  * 5. Download bereitstellen
- * 
- * HINWEIS: Diese Funktion erzeugt ein PDF mit eingebettetem XML,
- * aber KEIN PDF/A-3-konformes Dokument. Für revisionssichere E-Rechnungen
- * verwende generatePDFA3ERechnung() aus generatePDFA3Server.ts
  */
-export async function generateERechnung(
-    order: any, 
-    ownCompany: any,
-    usePDFA3: boolean = false
-): Promise<void> {
+export async function generateERechnung(order: any, ownCompany: any): Promise<void> {
     // 1. Rechnungsdaten aufbauen (alle Berechnungen hier)
     const invoiceData = buildInvoiceData(order, ownCompany);
     
-    // Wenn PDF/A-3 gewünscht, Backend API aufrufen
-    if (usePDFA3) {
-        const { generatePDFA3ERechnungWithData } = await import('./generatePDFA3Server');
-        await generatePDFA3ERechnungWithData(order.id, invoiceData);
-        return;
-    }
-    
-    // 2. PDF generieren (Preview, nicht PDF/A-3)
+    // 2. PDF generieren
     const pdfBytes = generateInvoicePDF(invoiceData);
     
     // 3. XML generieren
     const xmlContent = generateZUGFeRDXML(invoiceData);
     
-    // 4. PDF laden und XML einbetten (pdf-lib unterstützt KEIN PDF/A-3!)
+    // 4. PDF laden und XML einbetten
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const xmlBytes = new TextEncoder().encode(xmlContent);
     pdfDoc.attach(xmlBytes, 'ZUGFeRD-invoice.xml', {

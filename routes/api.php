@@ -62,9 +62,3 @@ Route::middleware('auth:sanctum')->post('/performances', [PerformanceController:
 // Company Routes
 Route::put('/companies/{company}', [CompanyController::class, 'update']);
 Route::post('/companies', [CompanyController::class, 'store']);
-
-// E-Rechnung Generierung (PDF/A-3)
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::post('/invoices/{id}/generate-erechnung', [InvoiceController::class, 'generateERechnung']);
-    Route::post('/invoices/{id}/generate-xrechnung', [InvoiceController::class, 'generateXRechnung']);
-});

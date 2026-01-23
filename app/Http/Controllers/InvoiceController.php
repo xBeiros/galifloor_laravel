@@ -127,6 +127,38 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Rechnung komplett löschen.
+     * 
+     * @param int $id Invoice ID
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        $invoice = Invoice::with(['performances', 'assets'])->findOrFail($id);
+
+        // Zugehörige Performances löschen
+        $invoice->performances()->delete();
+
+        // Zugehörige Assets löschen (Dateien werden automatisch gelöscht, wenn das Model entsprechend konfiguriert ist)
+        foreach ($invoice->assets as $asset) {
+            \Storage::disk('public')->delete($asset->file_path);
+        }
+        $invoice->assets()->delete();
+
+        // Rechnung selbst löschen
+        $invoice->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Rechnung wurde erfolgreich gelöscht.'
+            ]);
+        }
+
+        return redirect()->route('invoices.index')->with('success', 'Rechnung wurde erfolgreich gelöscht.');
+    }
+
+    /**
      * Iveha Rechnungen Index-Seite anzeigen.
      */
     public function ivehaIndex()
@@ -242,146 +274,4 @@ class InvoiceController extends Controller
         return redirect()->route('iveha-invoices.index')->with('success', $invoice->is_checked ? 'Rechnung als abgehakt markiert.' : 'Markierung entfernt.');
     }
 
-    /**
-     * Generiert eine PDF/A-3-konforme E-Rechnung mit eingebettetem ZUGFeRD XML.
-     * 
-     * Diese Methode ruft einen externen Java Service (iText 7) auf, um
-     * ein vollständig PDF/A-3-konformes Dokument zu erzeugen.
-     * 
-     * @param int $id Invoice ID
-     * @return \Illuminate\Http\Response PDF/A-3 Byte-Stream
-     */
-    public function generateERechnung($id)
-    {
-        $invoice = Invoice::with(['company', 'performances'])->findOrFail($id);
-        $ownCompany = OwnCompany::first();
-
-        // Option 1: InvoiceData wird vom Frontend übermittelt
-        if (request()->has('invoiceData') && request()->has('zugferdXML')) {
-            $invoiceData = request()->input('invoiceData');
-            $zugferdXML = request()->input('zugferdXML');
-            
-            // PDF/A-3 über Java Service generieren
-            $pdfBytes = $this->generatePDFA3ViaJava($invoiceData, $zugferdXML);
-        } else {
-            // Option 2: Backend generiert InvoiceData selbst
-            // (Hier müsste die buildInvoiceData Logik aus TypeScript nach PHP portiert werden)
-            // Für jetzt: Frontend sollte InvoiceData mitsenden
-            return response()->json([
-                'error' => 'invoiceData und zugferdXML müssen übermittelt werden'
-            ], 400);
-        }
-
-        if (!$pdfBytes) {
-            return response()->json([
-                'error' => 'PDF/A-3 Generierung fehlgeschlagen'
-            ], 500);
-        }
-
-        $filename = sprintf(
-            'RG-%s-%s-E-Rechnung.pdf',
-            $invoice->year,
-            $invoice->order_number
-        );
-
-        return response($pdfBytes)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-    }
-
-    /**
-     * Ruft den Java Service zur PDF/A-3 Generierung auf.
-     * 
-     * @param array $invoiceData InvoiceData als Array
-     * @param string $zugferdXML ZUGFeRD XML String
-     * @return string|null PDF/A-3 Byte-Stream oder null bei Fehler
-     */
-    private function generatePDFA3ViaJava(array $invoiceData, string $zugferdXML): ?string
-    {
-        // Option 1: Java Command direkt ausführen
-        // Voraussetzung: Java JAR-Datei im Projekt
-        $jarPath = base_path('java/pdfa3-generator.jar');
-        
-        if (file_exists($jarPath)) {
-            $invoiceDataJson = json_encode($invoiceData);
-            $zugferdXMLEscaped = escapeshellarg($zugferdXML);
-            $invoiceDataEscaped = escapeshellarg($invoiceDataJson);
-            
-            $command = sprintf(
-                'java -jar %s --invoiceData %s --zugferdXML %s',
-                escapeshellarg($jarPath),
-                $invoiceDataEscaped,
-                $zugferdXMLEscaped
-            );
-            
-            $pdfBytes = shell_exec($command);
-            return $pdfBytes;
-        }
-
-        // Option 2: REST API zu Java Service
-        // Voraussetzung: Java Service läuft auf localhost:8080
-        $javaServiceUrl = env('PDFA3_JAVA_SERVICE_URL', 'http://localhost:8080/generate-pdfa3');
-        
-        try {
-            $response = \Http::timeout(30)->post($javaServiceUrl, [
-                'invoiceData' => $invoiceData,
-                'zugferdXML' => $zugferdXML
-            ]);
-            
-            if ($response->successful()) {
-                return $response->body();
-            }
-        } catch (\Exception $e) {
-            \Log::error('PDF/A-3 Generierung fehlgeschlagen: ' . $e->getMessage());
-        }
-
-        // Option 3: Fallback - PDF ohne PDF/A-3 (nicht empfohlen für Produktion)
-        // Hier könnte eine PHP-basierte PDF-Generierung verwendet werden,
-        // aber diese ist NICHT PDF/A-3 konform!
-        \Log::warning('PDF/A-3 Generierung nicht verfügbar. Java Service erforderlich.');
-        
-        return null;
-    }
-
-    /**
-     * Generiert XRechnung XML für öffentliche Auftraggeber.
-     * 
-     * @param int $id Invoice ID
-     * @return \Illuminate\Http\Response XRechnung XML
-     */
-    public function generateXRechnung($id)
-    {
-        $invoice = Invoice::with(['company', 'performances'])->findOrFail($id);
-        $ownCompany = OwnCompany::first();
-
-        // InvoiceData vom Frontend oder Backend generieren
-        if (request()->has('invoiceData')) {
-            $invoiceData = request()->input('invoiceData');
-        } else {
-            // Backend müsste InvoiceData selbst generieren
-            return response()->json([
-                'error' => 'invoiceData muss übermittelt werden'
-            ], 400);
-        }
-
-        // XRechnung XML generieren (kann auch im Frontend erfolgen)
-        // Für jetzt: Frontend generiert XML und sendet es
-        if (request()->has('xrechnungXML')) {
-            $xrechnungXML = request()->input('xrechnungXML');
-        } else {
-            return response()->json([
-                'error' => 'xrechnungXML muss übermittelt werden'
-            ], 400);
-        }
-
-        $filename = sprintf(
-            'RG-%s-%s-XRechnung.xml',
-            $invoice->year,
-            $invoice->order_number
-        );
-
-        return response($xrechnungXML, 200)
-            ->header('Content-Type', 'application/xml; charset=UTF-8')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-    }
 }

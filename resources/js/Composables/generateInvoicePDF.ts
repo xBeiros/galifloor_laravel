@@ -35,7 +35,7 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     doc.text("Josefstraße 1, 59067 Hamm", 40, 27);
     doc.setFontSize(8);
     doc.text("Handelsregister Hamm", 171.5, 21, { align: "right" });
-    doc.text("Steuer Nr. 322 5007 4942", 175, 24, { align: "right" });
+    doc.text("Steuer Nr. DE5454654", 175, 24, { align: "right" });
 
     doc.setFont("helvetica", "bold");
     doc.text(order?.company?.name, 15, 37);

@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import ShowInvoice from './Show.vue'
-import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
+import { PlusIcon, MagnifyingGlassIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import {
     Dialog,
     DialogOverlay,
@@ -126,6 +126,23 @@ const goToInvoice = async (invoiceId) => {
         await router.visit(`/invoice/${invoiceId}`);
     } catch (error) {
         console.error("Navigation fehlgeschlagen:", error);
+    }
+};
+
+const deleteInvoice = async (invoiceId, event) => {
+    event.stopPropagation(); // Verhindert, dass der Row-Click ausgelöst wird
+    
+    if (!confirm(t('invoices.delete_confirm'))) {
+        return;
+    }
+
+    try {
+        await axios.delete(`/invoices/${invoiceId}`);
+        // Rechnungen neu laden
+        await fetchInvoices();
+    } catch (error) {
+        console.error("Fehler beim Löschen der Rechnung:", error);
+        alert(t('invoices.delete_error'));
     }
 };
 
@@ -282,6 +299,7 @@ onMounted(async () => {
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.address') }}</th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.city') }}</th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.status') }}</th>
+                                <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.actions') }}</th>
                             </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -295,6 +313,15 @@ onMounted(async () => {
                                 <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm']">
                                     <StatusBadge v-if="invoice.status" :status="invoice.status" />
                                     <span v-else class="text-gray-400 dark:text-gray-500">-</span>
+                                </td>
+                                <td :class="[invoiceIdx !== invoice.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : '', 'whitespace-nowrap px-3 py-4 text-sm']">
+                                    <button
+                                        @click="deleteInvoice(invoice.id, $event)"
+                                        class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                                        :title="t('invoices.delete')"
+                                    >
+                                        <TrashIcon class="h-5 w-5" />
+                                    </button>
                                 </td>
                             </tr>
                             </tbody>
