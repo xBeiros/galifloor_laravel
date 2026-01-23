@@ -22,8 +22,6 @@ const props = defineProps({
     invoice: Object
 });
 
-defineEmits(['show-charge-form']);
-
 const open = ref(false);
 const changeDate = ref(false);
 const editQmPrice = ref(false);
@@ -68,6 +66,12 @@ const schema = computed(() => {
 const flatrateText = (flatrate) => (flatrate ? t('performance.flatrate') : t('performance.not_flatrate'));
 
 const formatDateHours = (date) => dayjs(date).format("DD.MM.YYYY HH:mm");
+
+const emit = defineEmits(['show-charge-form']);
+
+const handleShowChargeForm = () => {
+    emit('show-charge-form');
+};
 
 const calculateTotalPrice = () => {
     if (!Array.isArray(performances.value)) return 0;
@@ -268,7 +272,7 @@ const updateQmAndPrice = async () => {
         <div class="flex sm:justify-end gap-2">
             <button
                 type="button"
-                @click="$emit('show-charge-form')"
+                @click="handleShowChargeForm"
                 class="w-full sm:w-auto rounded-md bg-red-600 dark:bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 dark:hover:bg-red-600 focus-visible:outline focus-visible:outline-red-600"
             >
                 {{ t('charges.add') }}

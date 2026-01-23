@@ -172,6 +172,10 @@ const props = defineProps({
     invoiceId: Number,
     charges: Array,
     invoice: Object,
+    showForm: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const emit = defineEmits(['close']);
