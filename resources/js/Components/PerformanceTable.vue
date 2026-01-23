@@ -81,6 +81,23 @@ const calculateTotalPrice = () => {
     );
 };
 
+// Berechnungen für Summenanzeige
+const totalAmount = computed(() => calculateTotalPrice());
+
+const securityServiceAmount = computed(() => {
+    const securityServicePercent = Number(props.invoice?.company?.security_service) || 0;
+    return (totalAmount.value * securityServicePercent) / 100;
+});
+
+const cashDiscountAmount = computed(() => {
+    const cashDiscountPercent = Number(props.invoice?.company?.cash_discount) || 0;
+    return (totalAmount.value * cashDiscountPercent) / 100;
+});
+
+const invoiceAmount = computed(() => {
+    return totalAmount.value - securityServiceAmount.value - cashDiscountAmount.value;
+});
+
 
 const getStatusBadge = (status) => {
     const statusMap = {
@@ -449,8 +466,48 @@ const updateQmAndPrice = async () => {
                 </div>
             </div>
         </div>
-        <div class="mt-4 flex justify-end">
-            <p class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{{ t('performance.total') }}: {{ calculateTotalPrice().toFixed(2) }} €</p>
+        <!-- Summenanzeige -->
+        <div class="mt-6 flex justify-end">
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 min-w-[280px]">
+                <div class="space-y-2">
+                    <!-- Gesamtsumme -->
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.total') }}:</span>
+                        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ totalAmount.toFixed(2) }} €</span>
+                    </div>
+                    
+                    <!-- Sicherheitsleistung -->
+                    <div v-if="securityServiceAmount > 0" class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ t('performance.security_service') }} 
+                            <span class="text-xs text-gray-500 dark:text-gray-500">
+                                ({{ props.invoice?.company?.security_service || 0 }}%)
+                            </span>:
+                        </span>
+                        <span class="text-sm text-red-600 dark:text-red-400">-{{ securityServiceAmount.toFixed(2) }} €</span>
+                    </div>
+                    
+                    <!-- Skonto -->
+                    <div v-if="cashDiscountAmount > 0" class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ t('performance.cash_discount') }} 
+                            <span class="text-xs text-gray-500 dark:text-gray-500">
+                                ({{ props.invoice?.company?.cash_discount || 0 }}%)
+                            </span>:
+                        </span>
+                        <span class="text-sm text-red-600 dark:text-red-400">-{{ cashDiscountAmount.toFixed(2) }} €</span>
+                    </div>
+                    
+                    <!-- Trennlinie -->
+                    <div v-if="securityServiceAmount > 0 || cashDiscountAmount > 0" class="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2"></div>
+                    
+                    <!-- Rechnungssumme -->
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-base font-semibold text-gray-900 dark:text-white">{{ t('performance.invoice_amount') }}:</span>
+                        <span class="text-base font-bold text-gray-900 dark:text-white">{{ invoiceAmount.toFixed(2) }} €</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <TransitionRoot as="template" :show="changeDate">
             <Dialog class="relative z-50" @close="changeDate = false">
