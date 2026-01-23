@@ -202,7 +202,7 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
 
-    // Rechnungsbetrag
+    // Rechnungsbetrag (vor Abzug der Belastungen)
     doc.text("Rechnungsbetrag", 17, currentY + 4);
     const invoiceAmount = totalAmount - securityService - cashDiscount;
     doc.text(`${invoiceAmount.toFixed(2)} €`, 193, currentY + 4, { align: "right" });
@@ -213,6 +213,49 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
 
     doc.line(lineStartX2, currentY + 4.5, lineEndX2, currentY + 4.5);
     doc.line(lineStartX2, currentY + 5, lineEndX2, currentY + 5);
+    
+    // Belastungsanzeigen anzeigen, falls vorhanden
+    const charges = order.charges || [];
+    const totalCharges = charges.reduce((sum: number, charge: any) => sum + parseFloat(charge.amount || 0), 0);
+    
+    if (totalCharges > 0) {
+        currentY += 9; // Abstand nach Rechnungsbetrag
+        
+        // Belastungsanzeigen auflisten
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text("Belastungsanzeigen:", 17, currentY);
+        currentY += 4;
+        
+        charges.forEach((charge: any) => {
+            const chargeAmount = parseFloat(charge.amount || 0);
+            const chargeDescription = charge.description || 'Belastung';
+            doc.text(chargeDescription, 17, currentY);
+            doc.text(`${chargeAmount.toFixed(2)} €`, 193, currentY, { align: "right" });
+            currentY += 4;
+        });
+        
+        // Gesamtbelastung
+        doc.setFont("helvetica", "bold");
+        doc.text("Gesamtbelastung", 17, currentY);
+        doc.text(`${totalCharges.toFixed(2)} €`, 193, currentY, { align: "right" });
+        currentY += 6;
+        
+        // Zwischenbetrag (Rechnungsbetrag - Belastungen)
+        doc.setFillColor(220, 230, 255); // Hellblauer Hintergrund
+        doc.rect(15, currentY, 180, 5, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("Zwischenbetrag", 17, currentY + 4);
+        const intermediateAmount = invoiceAmount - totalCharges;
+        doc.text(`${intermediateAmount.toFixed(2)} €`, 193, currentY + 4, { align: "right" });
+        doc.setFontSize(8);
+        const intermediateTextWidth = doc.getTextWidth(`${intermediateAmount.toFixed(2)} €`);
+        const intermediateLineStartX = 190 - intermediateTextWidth;
+        const intermediateLineEndX = 193;
+        doc.line(intermediateLineStartX, currentY + 4.5, intermediateLineEndX, currentY + 4.5);
+        doc.line(intermediateLineStartX, currentY + 5, intermediateLineEndX, currentY + 5);
+    }
 
     // Ausführungdatum
     doc.setFont("helvetica", "normal");

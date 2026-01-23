@@ -22,6 +22,8 @@ const props = defineProps({
     invoice: Object
 });
 
+defineEmits(['show-charge-form']);
+
 const open = ref(false);
 const changeDate = ref(false);
 const editQmPrice = ref(false);
@@ -263,7 +265,14 @@ const updateQmAndPrice = async () => {
 
 <template>
     <div class="mt-10">
-        <div class="flex sm:justify-end">
+        <div class="flex sm:justify-end gap-2">
+            <button
+                type="button"
+                @click="$emit('show-charge-form')"
+                class="w-full sm:w-auto rounded-md bg-red-600 dark:bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 dark:hover:bg-red-600 focus-visible:outline focus-visible:outline-red-600"
+            >
+                {{ t('charges.add') }}
+            </button>
             <button
                 type="button"
                 @click="open = true"

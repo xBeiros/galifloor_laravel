@@ -1,11 +1,21 @@
 <template>
     <div class="mt-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {{ t('charges.title') }}
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                {{ t('charges.title') }}
+            </h2>
+            <button
+                v-if="props.showForm"
+                type="button"
+                @click="emit('close')"
+                class="rounded-md bg-gray-600 dark:bg-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 dark:hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+            >
+                {{ t('charges.close') }}
+            </button>
+        </div>
         
         <!-- Formular zum Hinzufügen einer Belastungsanzeige -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 mb-4">
+        <div v-if="props.showForm" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 mb-4">
             <form @submit.prevent="submitCharge" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -161,8 +171,10 @@ const { t } = useI18n();
 const props = defineProps({
     invoiceId: Number,
     charges: Array,
+    invoice: Object,
 });
 
+const emit = defineEmits(['close']);
 const fileInput = ref(null);
 const selectedFile = ref(null);
 
@@ -192,6 +204,8 @@ const submitCharge = () => {
             if (fileInput.value) {
                 fileInput.value.value = '';
             }
+            // Formular nach erfolgreichem Speichern ausblenden
+            emit('close');
         },
     });
 };

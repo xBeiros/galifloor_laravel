@@ -37,6 +37,7 @@ console.log(props.invoice)
 
 const selectedStatus = ref('');
 const isOpen = ref(false);
+const showChargeForm = ref(false);
 
 function toggleDropdown() {
     isOpen.value = !isOpen.value;
@@ -268,9 +269,20 @@ function updateStatus(newStatus) {
                 </div>
             </div>
 
-            <PerformanceTable :order="invoice?.performances" :order_number="invoice?.order_number" :invoice="invoice" />
+            <PerformanceTable 
+                :order="invoice?.performances" 
+                :order_number="invoice?.order_number" 
+                :invoice="invoice"
+                @show-charge-form="showChargeForm = true"
+            />
 
-            <ChargeForm :invoice-id="invoice.id" :charges="invoice.charges || []" />
+            <ChargeForm 
+                :invoice-id="invoice.id" 
+                :charges="invoice.charges || []" 
+                :invoice="invoice"
+                :show-form="showChargeForm"
+                @close="showChargeForm = false"
+            />
 
             <div class="mt-6">
                 <h2 class="text-xl mt-4 text-gray-900 dark:text-white">{{ t('invoices.show.uploaded_files') }}</h2>
