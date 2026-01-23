@@ -681,22 +681,37 @@ export function generateZUGFeRDXML(invoice: InvoiceData): string {
  * 
  * ABLAUF:
  * 1. buildInvoiceData - Alle Berechnungen
- * 2. generateInvoicePDF - PDF-Generierung
+ * 2. generateInvoicePDF - PDF-Generierung (Preview)
  * 3. generateZUGFeRDXML - XML-Generierung
  * 4. XML ins PDF einbetten
  * 5. Download bereitstellen
+ * 
+ * HINWEIS: Diese Funktion erzeugt ein PDF mit eingebettetem XML,
+ * aber KEIN PDF/A-3-konformes Dokument. Für revisionssichere E-Rechnungen
+ * verwende generatePDFA3ERechnung() aus generatePDFA3Server.ts
  */
-export async function generateERechnung(order: any, ownCompany: any): Promise<void> {
+export async function generateERechnung(
+    order: any, 
+    ownCompany: any,
+    usePDFA3: boolean = false
+): Promise<void> {
     // 1. Rechnungsdaten aufbauen (alle Berechnungen hier)
     const invoiceData = buildInvoiceData(order, ownCompany);
     
-    // 2. PDF generieren
+    // Wenn PDF/A-3 gewünscht, Backend API aufrufen
+    if (usePDFA3) {
+        const { generatePDFA3ERechnungWithData } = await import('./generatePDFA3Server');
+        await generatePDFA3ERechnungWithData(order.id, invoiceData);
+        return;
+    }
+    
+    // 2. PDF generieren (Preview, nicht PDF/A-3)
     const pdfBytes = generateInvoicePDF(invoiceData);
     
     // 3. XML generieren
     const xmlContent = generateZUGFeRDXML(invoiceData);
     
-    // 4. PDF laden und XML einbetten
+    // 4. PDF laden und XML einbetten (pdf-lib unterstützt KEIN PDF/A-3!)
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const xmlBytes = new TextEncoder().encode(xmlContent);
     pdfDoc.attach(xmlBytes, 'ZUGFeRD-invoice.xml', {
