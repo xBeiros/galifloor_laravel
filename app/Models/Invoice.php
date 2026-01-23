@@ -58,4 +58,9 @@ class Invoice extends Model
     {
         return $this->hasMany(Asset::class);
     }
+
+    public function charges()
+    {
+        return $this->hasMany(Charge::class);
+    }
 }

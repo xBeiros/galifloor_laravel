@@ -171,42 +171,53 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     doc.line(lineStartX, totalY + 2, lineEndX, totalY + 2);
     doc.line(lineStartX, totalY + 3, lineEndX, totalY + 3);
 
-    // Sicherheitsleistung anzeigen
-    doc.setFont("helvetica", "normal");
-    doc.text("Sicherheitsleistung", 17, totalY + 10); // Text für Sicherheitsleistung
+    // Berechnungen
     const securityServicePercent = Number(order.company.security_service) || 0;
-    doc.text(securityServicePercent + " %", 150, totalY + 10, { align: "right" }); // Prozentwert
     const securityService = totalAmount / 100 * securityServicePercent;
-    doc.text(`${securityService.toFixed(2)} €`, 193, totalY + 10, { align: "right" });
-
-    doc.text("Skonto", 17, totalY + 14); // Text für Sicherheitsleistung
     const cashDiscountPercent = Number(order.company.cash_discount) || 0;
-    doc.text(cashDiscountPercent + " %", 150, totalY + 14, { align: "right" }); // Prozentwert
     const cashDiscount = totalAmount / 100 * cashDiscountPercent;
-    doc.text(`${cashDiscount.toFixed(2)} €`, 193, totalY + 14, { align: "right" });
+    
+    // Y-Position für Abzüge dynamisch anpassen
+    let currentY = totalY + 10;
+    
+    // Sicherheitsleistung nur anzeigen, wenn > 0%
+    if (securityServicePercent > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.text("Sicherheitsleistung", 17, currentY);
+        doc.text(securityServicePercent + " %", 150, currentY, { align: "right" });
+        doc.text(`${securityService.toFixed(2)} €`, 193, currentY, { align: "right" });
+        currentY += 4;
+    }
+
+    // Skonto anzeigen
+    doc.setFont("helvetica", "normal");
+    doc.text("Skonto", 17, currentY);
+    doc.text(cashDiscountPercent + " %", 150, currentY, { align: "right" });
+    doc.text(`${cashDiscount.toFixed(2)} €`, 193, currentY, { align: "right" });
+    currentY += 4;
 
     doc.setFillColor(220, 230, 255); // Hellblauer Hintergrund
-    doc.rect(15, totalY + 15, 180, 5, "F");
+    doc.rect(15, currentY, 180, 5, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
 
     // Rechnungsbetrag
-    doc.text("Rechnungsbetrag", 17, totalY + 19);
+    doc.text("Rechnungsbetrag", 17, currentY + 4);
     const invoiceAmount = totalAmount - securityService - cashDiscount;
-    doc.text(`${invoiceAmount.toFixed(2)} €`, 193, totalY + 19, { align: "right" });
+    doc.text(`${invoiceAmount.toFixed(2)} €`, 193, currentY + 4, { align: "right" });
     doc.setFontSize(8)
     const textWidth = doc.getTextWidth(`${invoiceAmount.toFixed(2)} €`);
     const lineStartX2 = 190 - textWidth;
     const lineEndX2 = 193;
 
-    doc.line(lineStartX2, totalY + 19.5, lineEndX2, totalY + 19.5);
-    doc.line(lineStartX2, totalY + 20, lineEndX2, totalY + 20);
+    doc.line(lineStartX2, currentY + 4.5, lineEndX2, currentY + 4.5);
+    doc.line(lineStartX2, currentY + 5, lineEndX2, currentY + 5);
 
     // Ausführungdatum
     doc.setFont("helvetica", "normal");
-    doc.text("Ausführungsdatum:", 15, totalY + 25);
-    let currentY = totalY + 30;
+    doc.text("Ausführungsdatum:", 15, currentY + 10);
+    let executionY = currentY + 15;
 
     for (let i = 0; i < order.performances.length; i++) {
         const performance = order.performances[i];
@@ -253,13 +264,13 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
             yOffset = 5;
         }
 
-        currentY += yOffset; // Y-Position aktualisieren
+        executionY += yOffset; // Y-Position aktualisieren
     }
 
     doc.setFont("helvetica", "italic");
-    doc.text("Die Umsatzsteuer wird gemäß § 13 b Abs. 2 Umsatzsteuergesetz vom Auftragsgeber abgeführt.", 15, currentY + 5);
+    doc.text("Die Umsatzsteuer wird gemäß § 13 b Abs. 2 Umsatzsteuergesetz vom Auftragsgeber abgeführt.", 15, executionY + 5);
     doc.setFont("helvetica", "normal")
-    doc.text("Bitte überweisen Sie den angegebenen Rechnungsbetrag auf das angegebene Konto bei der Sparkasse Hamm", 15, currentY + 10);
+    doc.text("Bitte überweisen Sie den angegebenen Rechnungsbetrag auf das angegebene Konto bei der Sparkasse Hamm", 15, executionY + 10);
 
     doc.setFontSize(6);
     const pageHeight = doc.internal.pageSize.height;

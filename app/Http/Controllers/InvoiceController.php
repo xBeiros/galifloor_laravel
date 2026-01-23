@@ -31,7 +31,7 @@ class InvoiceController extends Controller
      */
     public function show($id)
     {
-        $invoice = Invoice::with(['company', 'performances', 'assets'])->findOrFail($id);
+        $invoice = Invoice::with(['company', 'performances', 'assets', 'charges'])->findOrFail($id);
         $ownCompany = OwnCompany::first();
 
         return Inertia::render('Invoice/Show', [

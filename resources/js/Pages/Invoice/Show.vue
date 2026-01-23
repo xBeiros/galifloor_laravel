@@ -8,6 +8,7 @@ import PerformanceTable from '@/Components/PerformanceTable.vue';
 import dayjs from 'dayjs';
 import { generateInvoice } from '@/Composables/generateInvoicePDF';
 import FileUploader from '@/Components/FileUploader.vue';
+import ChargeForm from '@/Components/ChargeForm.vue';
 import { generateInvoiceAndSend } from '@/Composables/generateAndSendInvoicePDF';
 import { useI18n } from 'vue-i18n';
 
@@ -247,7 +248,7 @@ function updateStatus(newStatus) {
                     <div class="text-gray-700 dark:text-gray-300 text-sm">
                         <p>{{ invoice?.construction || 'Unbekannter Kunde' }}</p>
                         <p>{{ invoice?.address || 'Keine Adresse' }}</p>
-                        <p>{{ invoice?.postal || '' }} {{ order?.city || '' }}</p>
+                        <p>{{ invoice?.postal || '' }} {{ invoice?.city || '' }}</p>
                     </div>
                 </div>
 
@@ -268,6 +269,8 @@ function updateStatus(newStatus) {
             </div>
 
             <PerformanceTable :order="invoice?.performances" :order_number="invoice?.order_number" :invoice="invoice" />
+
+            <ChargeForm :invoice-id="invoice.id" :charges="invoice.charges || []" />
 
             <div class="mt-6">
                 <h2 class="text-xl mt-4 text-gray-900 dark:text-white">{{ t('invoices.show.uploaded_files') }}</h2>

@@ -420,6 +420,21 @@
             "download": "PDF Ausstellen"
         },
         "auto_calculated": "Automatisch berechnet"
+    },
+    "charges": {
+        "title": "Belastungsanzeigen",
+        "description": "Beschreibung",
+        "description_placeholder": "Beschreibung des Schadens...",
+        "amount": "Betrag (€)",
+        "date": "Datum",
+        "file": "Datei",
+        "optional": "optional",
+        "add": "Belastungsanzeige hinzufügen",
+        "actions": "Aktionen",
+        "delete": "Löschen",
+        "delete_confirm": "Möchten Sie diese Belastungsanzeige wirklich löschen?",
+        "total": "Gesamt",
+        "no_charges": "Keine Belastungsanzeigen vorhanden"
     }
 }
 

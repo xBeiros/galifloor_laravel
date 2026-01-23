@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ChargeController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DashboardController;
@@ -121,6 +122,8 @@ Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->middleware(['a
 Route::post('/invoice/{invoice}/issue', [InvoiceController::class, 'issueInvoice'])->middleware(['auth', 'verified'])->name('invoice.issue');
 Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
 Route::post('/upload', [AssetController::class, 'store']);
+Route::post('/charges', [ChargeController::class, 'store'])->middleware(['auth', 'verified'])->name('charges.store');
+Route::delete('/charges/{id}', [ChargeController::class, 'destroy'])->middleware(['auth', 'verified'])->name('charges.destroy');
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
