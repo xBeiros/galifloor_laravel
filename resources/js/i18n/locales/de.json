@@ -42,6 +42,7 @@
         "actions": "Aktionen",
         "delete": "Löschen",
         "delete_confirm": "Möchten Sie diese Rechnung wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "delete_confirm_second": "Sind Sie sich absolut sicher? Diese Rechnung wird unwiderruflich gelöscht. Bitte bestätigen Sie erneut.",
         "delete_error": "Fehler beim Löschen der Rechnung.",
         "modal": {
             "title": "Neuer Auftrag",
@@ -75,7 +76,6 @@
             "issue_invoice": "Rechnung Ausstellen",
             "confirm_issue": "Sind Sie sicher, dass Sie diese Rechnung ausstellen möchten? Nach dem Ausstellen kann die Rechnung heruntergeladen werden und das Datum wird festgeschrieben.",
             "download_invoice": "Rechnung Herunterladen",
-            "download_erechnung": "E-Rechnung (ZUGFeRD) Herunterladen",
             "download_corrected_invoice": "Korrigierte Rechnung Herunterladen",
             "download_iveha": "IVEHA Auftrag Herunterladen",
             "options": "Optionen",

@@ -132,7 +132,13 @@ const goToInvoice = async (invoiceId) => {
 const deleteInvoice = async (invoiceId, event) => {
     event.stopPropagation(); // Verhindert, dass der Row-Click ausgelöst wird
     
+    // Erste Bestätigung
     if (!confirm(t('invoices.delete_confirm'))) {
+        return;
+    }
+    
+    // Zweite Bestätigung
+    if (!confirm(t('invoices.delete_confirm_second'))) {
         return;
     }
 
