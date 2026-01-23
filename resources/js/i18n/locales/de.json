@@ -52,6 +52,7 @@
             "submit": "Abschicken"
         },
         "filter": {
+            "year": "Jahr",
             "status": "Status",
             "all_statuses": "Alle Status",
             "invoice_number": "Rechnungsnummer",
@@ -70,6 +71,7 @@
             "issue_invoice": "Rechnung Ausstellen",
             "confirm_issue": "Sind Sie sicher, dass Sie diese Rechnung ausstellen möchten? Nach dem Ausstellen kann die Rechnung heruntergeladen werden und das Datum wird festgeschrieben.",
             "download_invoice": "Rechnung Herunterladen",
+            "download_erechnung": "E-Rechnung (ZUGFeRD) Herunterladen",
             "download_corrected_invoice": "Korrigierte Rechnung Herunterladen",
             "download_iveha": "IVEHA Auftrag Herunterladen",
             "options": "Optionen",

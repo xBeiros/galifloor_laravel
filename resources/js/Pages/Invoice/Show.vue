@@ -9,12 +9,14 @@ import dayjs from 'dayjs';
 import { generateInvoice } from '@/Composables/generateInvoicePDF';
 import FileUploader from '@/Components/FileUploader.vue';
 import { generateInvoiceAndSend } from '@/Composables/generateAndSendInvoicePDF';
+import { generateERechnung } from '@/Composables/generateERechnung';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
 const props = defineProps({
     invoice: Object, // Wird über Inertia von Laravel übergeben
+    ownCompany: Object, // Eigene Firmendaten für E-Rechnung
 });
 
 const formattedDate = computed(() => {
@@ -87,6 +89,23 @@ const generateInvoicePDF = () => {
     }
     console.log(props.invoice);
     generateInvoice(props.invoice, false);
+};
+
+const generateERechnungPDF = async () => {
+    if (!props.invoice.issued_at) {
+        alert('Bitte stellen Sie die Rechnung zuerst aus.');
+        return;
+    }
+    if (!props.ownCompany) {
+        alert('Firmendaten fehlen. Bitte konfigurieren Sie Ihre Firmendaten in den Einstellungen.');
+        return;
+    }
+    try {
+        await generateERechnung(props.invoice, props.ownCompany);
+    } catch (error) {
+        console.error('Fehler beim Generieren der E-Rechnung:', error);
+        alert('Fehler beim Generieren der E-Rechnung. Bitte versuchen Sie es erneut.');
+    }
 };
 
 
@@ -189,6 +208,17 @@ function updateStatus(newStatus) {
                             class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-indigo-600 dark:bg-indigo-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                         >
                             {{ t('invoices.show.download_invoice') }}
+                        </button>
+                        
+                        <!-- E-Rechnung herunterladen Button (nur wenn ausgestellt) -->
+                        <button 
+                            v-if="invoice?.issued_at" 
+                            @click="generateERechnungPDF()" 
+                            type="button" 
+                            class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-purple-600 dark:bg-purple-500 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 dark:hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                            title="E-Rechnung im ZUGFeRD-Format (EN 16931-konform)"
+                        >
+                            {{ t('invoices.show.download_erechnung') }}
                         </button>
                         <button 
                             v-if="invoice?.status === 'completed' && invoice?.issued_at" 

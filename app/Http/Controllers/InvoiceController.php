@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\InvoiceMail;
 use App\Models\Invoice;
 use App\Models\IvehaInvoice;
+use App\Models\OwnCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -31,9 +32,11 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $invoice = Invoice::with(['company', 'performances', 'assets'])->findOrFail($id);
+        $ownCompany = OwnCompany::first();
 
         return Inertia::render('Invoice/Show', [
-            'invoice' => $invoice
+            'invoice' => $invoice,
+            'ownCompany' => $ownCompany
         ]);
     }
 

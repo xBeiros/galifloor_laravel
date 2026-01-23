@@ -51,6 +51,7 @@
             "submit": "Gönder"
         },
         "filter": {
+            "year": "Yıl",
             "status": "Durum",
             "all_statuses": "Tüm Durumlar",
             "invoice_number": "Fatura Numarası",
@@ -69,6 +70,7 @@
             "issue_invoice": "Fatura Düzenle",
             "confirm_issue": "Bu faturayı düzenlemek istediğinizden emin misiniz? Düzenlendikten sonra fatura indirilebilir ve tarih sabitlenir.",
             "download_invoice": "Faturayı İndir",
+            "download_erechnung": "E-Fatura (ZUGFeRD) İndir",
             "download_corrected_invoice": "Düzeltilmiş Fatura İndir",
             "download_iveha": "IVEHA Siparişi İndir",
             "options": "Seçenekler",

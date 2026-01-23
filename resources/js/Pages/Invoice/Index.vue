@@ -31,6 +31,7 @@ const searchInvoiceNumber = ref("");
 const searchCity = ref("");
 const searchCompanyName = ref("");
 const selectedStatus = ref("");
+const selectedYear = ref(new Date().getFullYear().toString()); // Standardmäßig aktuelles Jahr
 
 // Verfügbare Status-Optionen
 const statusOptions = [
@@ -42,9 +43,25 @@ const statusOptions = [
     { value: "canceled", label: t('invoices.show.status.canceled') },
 ];
 
+// Verfügbare Jahre aus den Rechnungen extrahieren
+const availableYears = computed(() => {
+    const years = new Set();
+    invoices.value.forEach((invoice) => {
+        if (invoice.year) {
+            years.add(invoice.year);
+        }
+    });
+    return Array.from(years).sort((a, b) => b - a); // Absteigend sortiert
+});
+
 // Gefilterte Rechnungen
 const filteredInvoices = computed(() => {
     return invoices.value.filter((invoice) => {
+        // Filter nach Jahr
+        if (selectedYear.value && invoice.year?.toString() !== selectedYear.value) {
+            return false;
+        }
+
         // Filter nach Status
         if (selectedStatus.value && invoice.status !== selectedStatus.value) {
             return false;
@@ -155,7 +172,23 @@ onMounted(async () => {
             
             <!-- Filter und Suchfelder -->
             <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <!-- Jahr Filter -->
+                    <div>
+                        <label for="year-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ t('invoices.filter.year') }}
+                        </label>
+                        <select
+                            id="year-filter"
+                            v-model="selectedYear"
+                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
+                        >
+                            <option v-for="year in availableYears" :key="year" :value="year.toString()">
+                                {{ year }}
+                            </option>
+                        </select>
+                    </div>
+
                     <!-- Status Filter -->
                     <div>
                         <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
