@@ -163,6 +163,7 @@ class PerformanceController extends Controller
         $request->validate([
             'qm' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
+            'flatrate' => 'boolean',
         ]);
 
         $performance = Performance::findOrFail($id);
@@ -179,12 +180,19 @@ class PerformanceController extends Controller
             $newStatus = 'modified';
         }
 
-        $performance->update([
+        $updateData = [
             'qm' => (int) $request->qm,
             'price' => $request->price,
             'modified_after_issue' => $modifiedAfterIssue,
             'status' => $newStatus,
-        ]);
+        ];
+
+        // Flatrate nur aktualisieren, wenn es im Request vorhanden ist
+        if ($request->has('flatrate')) {
+            $updateData['flatrate'] = $request->boolean('flatrate');
+        }
+
+        $performance->update($updateData);
 
         return response()->json([
             'success' => true,
