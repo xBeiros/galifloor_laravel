@@ -202,7 +202,7 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     if (securityServicePercent > 0) {
         doc.setFont("helvetica", "normal");
         doc.text("Sicherheitsleistung", 17, currentY);
-        doc.text(securityServicePercent + " %", 150, currentY, { align: "right" });
+        doc.text(securityServicePercent + " %", 155, currentY, { align: "right" });
         doc.text(`${securityService.toFixed(2)} €`, 193, currentY, { align: "right" });
         currentY += 4;
     }
