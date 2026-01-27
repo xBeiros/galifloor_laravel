@@ -17,7 +17,7 @@ export const usePerformanceStore = defineStore('performanceStore', {
 
         async addPerformance(values: any, invoiceId: number, dateTime: string) {
             try {
-                // Formatiere end_date falls vorhanden
+                // Formatiere end_date und individual_dates falls vorhanden
                 const payload: any = {
                     ...values,
                     date: dateTime,
@@ -26,6 +26,11 @@ export const usePerformanceStore = defineStore('performanceStore', {
                 // Wenn end_date vorhanden ist, formatiere es korrekt
                 if (values.end_date) {
                     payload.end_date = values.end_date;
+                }
+                
+                // Wenn individual_dates vorhanden ist, sende es als Array
+                if (values.individual_dates && Array.isArray(values.individual_dates)) {
+                    payload.individual_dates = values.individual_dates;
                 }
                 
                 const response = await axios.post(`/api/invoices/${invoiceId}/performances`, payload);

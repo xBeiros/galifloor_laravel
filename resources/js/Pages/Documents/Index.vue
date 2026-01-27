@@ -39,6 +39,7 @@ const form = useForm({
     name: '',
     category: 'Soka-Bau',
     description: '',
+    expiry_date: '',
     file: null
 });
 
@@ -46,6 +47,7 @@ const editForm = useForm({
     name: '',
     category: '',
     description: '',
+    expiry_date: '',
     file: null
 });
 
@@ -68,6 +70,7 @@ const openEditModal = (document) => {
     editForm.name = document.name;
     editForm.category = document.category;
     editForm.description = document.description || '';
+    editForm.expiry_date = document.expiry_date || '';
     editForm.file = null;
     showEditModal.value = true;
 };
@@ -109,6 +112,7 @@ const submitEdit = () => {
     formData.append('name', editForm.name);
     formData.append('category', editForm.category);
     formData.append('description', editForm.description || '');
+    formData.append('expiry_date', editForm.expiry_date || '');
     if (editForm.file) {
         formData.append('file', editForm.file);
     }
@@ -179,6 +183,19 @@ const formatDate = (dateString) => {
         month: '2-digit',
         day: '2-digit'
     });
+};
+
+const isExpired = (expiryDate) => {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+};
+
+const isExpiringSoon = (expiryDate) => {
+    if (!expiryDate) return false;
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry >= 0 && daysUntilExpiry <= 30; // Innerhalb der nächsten 30 Tage
 };
 </script>
 
@@ -251,6 +268,11 @@ const formatDate = (dateString) => {
                                         <div class="min-w-0 flex-1">
                                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ doc.name }}</h4>
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(doc.created_at) }}</p>
+                                            <p v-if="doc.expiry_date" class="text-xs mt-1" :class="isExpired(doc.expiry_date) ? 'text-red-600 dark:text-red-400 font-semibold' : isExpiringSoon(doc.expiry_date) ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'">
+                                                {{ t('documents.index.expires') }}: {{ formatDate(doc.expiry_date) }}
+                                                <span v-if="isExpired(doc.expiry_date)" class="ml-1">({{ t('documents.index.expired') }})</span>
+                                                <span v-else-if="isExpiringSoon(doc.expiry_date)" class="ml-1">({{ t('documents.index.expiring_soon') }})</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -349,6 +371,17 @@ const formatDate = (dateString) => {
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        {{ t('documents.index.upload_modal.expiry_date') }} ({{ t('common.optional') }})
+                                    </label>
+                                    <input
+                                        v-model="form.expiry_date"
+                                        type="date"
+                                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         {{ t('documents.index.upload_modal.file') }}
                                     </label>
                                     <input
@@ -435,6 +468,17 @@ const formatDate = (dateString) => {
                                         rows="3"
                                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
                                     ></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        {{ t('documents.index.upload_modal.expiry_date') }} ({{ t('common.optional') }})
+                                    </label>
+                                    <input
+                                        v-model="editForm.expiry_date"
+                                        type="date"
+                                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
                                 </div>
 
                                 <div>

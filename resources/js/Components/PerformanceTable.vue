@@ -34,6 +34,8 @@ const dateTime = ref("");
 const endDateTime = ref("");
 const flatrate = ref(false);
 const multipleDays = ref(false);
+const individualDays = ref(false);
+const selectedIndividualDates = ref([]);
 const performanceStore = usePerformanceStore();
 const performances = computed(() => {
     if (!props.order) return [];
@@ -51,13 +53,19 @@ const schema = computed(() => {
         flatrate: yup.boolean(),
     };
     
-    if (multipleDays.value) {
+    if (multipleDays.value && !individualDays.value) {
         baseSchema.end_date = yup.string()
             .required(t('performance.end_date_required'))
             .test('after-start', t('performance.end_date_after_start'), function(value) {
                 if (!value || !dateTime.value) return true;
                 return new Date(value) >= new Date(dateTime.value);
             });
+    }
+    
+    if (individualDays.value) {
+        baseSchema.individual_dates = yup.array()
+            .of(yup.string().required())
+            .min(1, t('performance.individual_dates_required'));
     }
     
     return yup.object(baseSchema);
@@ -126,20 +134,96 @@ const handleEndDateChange = (event) => {
     endDateTime.value = dayjs(inputDate).format("YYYY-MM-DDTHH:mm");
 };
 
+const replaceCommaWithDot = (event) => {
+    if (event.target.value && typeof event.target.value === 'string' && event.target.value.includes(',')) {
+        const newValue = event.target.value.replace(/,/g, '.');
+        event.target.value = newValue;
+        // Aktualisiere auch das v-model direkt
+        if (event.target.id === 'price') {
+            // Für Field-Komponente wird der Wert über das Event automatisch aktualisiert
+        } else {
+            // Für selectedPrice direkt aktualisieren
+            selectedPrice.value = newValue;
+        }
+        // Trigger input event erneut, damit v-model aktualisiert wird
+        event.target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+};
+
+const handleIndividualDateChange = (event) => {
+    const inputDate = event.target.value;
+    if (inputDate) {
+        const date = dayjs(inputDate);
+        const dayOfWeek = date.day(); // 0 = Sonntag, 6 = Samstag
+        
+        // Prüfe ob es ein Wochenende ist und entferne es automatisch
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            alert(t('performance.weekend_not_allowed'));
+            dateTime.value = ""; // Zurücksetzen
+            return;
+        }
+        
+        dateTime.value = date.format("YYYY-MM-DDTHH:mm");
+    }
+};
+
+const addIndividualDate = () => {
+    if (dateTime.value) {
+        const date = dayjs(dateTime.value);
+        const dayOfWeek = date.day(); // 0 = Sonntag, 6 = Samstag
+        
+        // Prüfe ob es ein Wochenende ist
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            alert(t('performance.weekend_not_allowed'));
+            dateTime.value = ""; // Zurücksetzen
+            return;
+        }
+        
+        const dateStr = date.format("YYYY-MM-DD HH:mm:ss");
+        if (!selectedIndividualDates.value.includes(dateStr)) {
+            selectedIndividualDates.value.push(dateStr);
+            // Sortiere die Daten chronologisch (frühere Daten zuerst)
+            selectedIndividualDates.value.sort((a, b) => {
+                return new Date(a).getTime() - new Date(b).getTime();
+            });
+        }
+        dateTime.value = ""; // Zurücksetzen für nächstes Datum
+    }
+};
+
+const removeIndividualDate = (index) => {
+    selectedIndividualDates.value.splice(index, 1);
+};
+
 const onSubmit = async (values) => {
     try {
-        // Formatiere Datum korrekt für das Backend
-        const formattedStartDate = dateTime.value ? dayjs(dateTime.value).format("YYYY-MM-DD HH:mm:ss") : null;
-        const formattedEndDate = multipleDays.value && endDateTime.value 
-            ? dayjs(endDateTime.value).format("YYYY-MM-DD HH:mm:ss") 
-            : null;
+        let formattedStartDate = null;
+        let formattedEndDate = null;
+        let individualDatesArray = null;
+        
+        if (individualDays.value) {
+            // Individuelle Tage: Verwende das erste Datum als date, restliche in individual_dates
+            if (selectedIndividualDates.value.length > 0) {
+                formattedStartDate = selectedIndividualDates.value[0];
+                individualDatesArray = selectedIndividualDates.value;
+            }
+        } else if (multipleDays.value) {
+            // Mehrere Tage (Zeitraum)
+            formattedStartDate = dateTime.value ? dayjs(dateTime.value).format("YYYY-MM-DD HH:mm:ss") : null;
+            formattedEndDate = endDateTime.value ? dayjs(endDateTime.value).format("YYYY-MM-DD HH:mm:ss") : null;
+        } else {
+            // Einzelner Tag
+            formattedStartDate = dateTime.value ? dayjs(dateTime.value).format("YYYY-MM-DD HH:mm:ss") : null;
+        }
         
         const performanceData = {
             ...values,
             flatrate: flatrate.value,
             multiple_days: multipleDays.value,
+            individual_days: individualDays.value,
             date: formattedStartDate,
             end_date: formattedEndDate,
+            individual_dates: individualDatesArray,
         };
         
         await performanceStore.addPerformance(performanceData, props.invoice.id, formattedStartDate);
@@ -147,6 +231,8 @@ const onSubmit = async (values) => {
         // Formular zurücksetzen
         flatrate.value = false;
         multipleDays.value = false;
+        individualDays.value = false;
+        selectedIndividualDates.value = [];
         dateTime.value = "";
         endDateTime.value = "";
         open.value = false;
@@ -154,7 +240,7 @@ const onSubmit = async (values) => {
         // Seite neu laden, um die neuen Performances anzuzeigen
         router.reload({ preserveScroll: true });
     } catch (e) {
-        console.error(e);
+        console.error("Fehler beim Hinzufügen der Performance:", e);
     }
 };
 
@@ -317,9 +403,14 @@ const updateQmAndPrice = async () => {
                                             <p class="line-through text-red-600 dark:text-red-400 text-xs">{{ formatDateHours(performance?.date) }}</p>
                                         </div>
                                         <div v-else class="text-xs">
-                                            <p v-if="performance?.end_date">
-                                                {{ formatDateHours(performance?.date) }}<br/>- {{ formatDateHours(performance?.end_date) }}
-                                            </p>
+                                            <template v-if="performance?.individual_dates && Array.isArray(performance.individual_dates) && performance.individual_dates.length > 0">
+                                                <p v-for="(date, index) in performance.individual_dates" :key="index" class="py-0.5">
+                                                    {{ formatDateHours(date) }}
+                                                </p>
+                                            </template>
+                                            <template v-else-if="performance?.end_date">
+                                                <p>{{ formatDateHours(performance?.date) }}<br/>- {{ formatDateHours(performance?.end_date) }}</p>
+                                            </template>
                                             <p v-else>{{ formatDateHours(performance?.date) }}</p>
                                         </div>
                                     </td>
@@ -413,9 +504,14 @@ const updateQmAndPrice = async () => {
                                             <p class="line-through text-red-600 dark:text-red-400">{{ formatDateHours(performance?.date) }}</p>
                                         </div>
                                         <div v-else>
-                                            <p v-if="performance?.end_date">
-                                                {{ formatDateHours(performance?.date) }} - {{ formatDateHours(performance?.end_date) }}
-                                            </p>
+                                            <template v-if="performance?.individual_dates && Array.isArray(performance.individual_dates) && performance.individual_dates.length > 0">
+                                                <p v-for="(date, index) in performance.individual_dates" :key="index" class="py-0.5">
+                                                    {{ formatDateHours(date) }}
+                                                </p>
+                                            </template>
+                                            <template v-else-if="performance?.end_date">
+                                                <p>{{ formatDateHours(performance?.date) }} - {{ formatDateHours(performance?.end_date) }}</p>
+                                            </template>
                                             <p v-else>{{ formatDateHours(performance?.date) }}</p>
                                         </div>
                                     </div>
@@ -601,6 +697,7 @@ const updateQmAndPrice = async () => {
                                                 <input
                                                     type="number"
                                                     v-model="selectedPrice"
+                                                    @input="replaceCommaWithDot"
                                                     step="0.01"
                                                     min="0"
                                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm"
@@ -674,7 +771,7 @@ const updateQmAndPrice = async () => {
                                             <div class="mx-2"></div>
                                             <div>
                                                 <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.price') }}</label>
-                                                <Field id="price" name="price" type="text" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                                <Field id="price" name="price" type="text" @input="replaceCommaWithDot" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                                 <ErrorMessage name="price" class="mt-2 text-sm text-red-600 dark:text-red-400" />
                                             </div>
                                             <div class="mx-2"></div>
@@ -708,6 +805,7 @@ const updateQmAndPrice = async () => {
                                             <label for="multipleDays" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.multiple_days') }}</label>
                                             <Switch 
                                                 v-model="multipleDays" 
+                                                @update:model-value="(val) => { if (val) individualDays.value = false; }"
                                                 :class="[multipleDays ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-gray-200 dark:bg-gray-700', 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-400 focus:ring-offset-2']"
                                             >
                                                 <span class="sr-only">{{ t('performance.multiple_days') }}</span>
@@ -726,7 +824,31 @@ const updateQmAndPrice = async () => {
                                             </Switch>
                                         </div>
                                         
-                                        <div>
+                                        <!-- Individuelle Tage Option -->
+                                        <div class="flex items-center space-x-3">
+                                            <label for="individualDays" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.individual_days') }}</label>
+                                            <Switch 
+                                                v-model="individualDays" 
+                                                @update:model-value="(val) => { if (val) multipleDays.value = false; }"
+                                                :class="[individualDays ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-gray-200 dark:bg-gray-700', 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-400 focus:ring-offset-2']"
+                                            >
+                                                <span class="sr-only">{{ t('performance.individual_days') }}</span>
+                                                <span :class="[individualDays ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out']">
+                                                    <span :class="[individualDays ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in', 'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity']" aria-hidden="true">
+                                                        <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12">
+                                                            <path d="M4 8l2-2m0 0l2-2M6 6L4 4m2 2l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                        </svg>
+                                                    </span>
+                                                    <span :class="[individualDays ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out', 'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity']" aria-hidden="true">
+                                                        <svg class="h-3 w-3 text-indigo-600" fill="currentColor" viewBox="0 0 12 12">
+                                                            <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                                                        </svg>
+                                                    </span>
+                                                </span>
+                                            </Switch>
+                                        </div>
+                                        
+                                        <div v-if="!individualDays">
                                             <label for="datetime" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.date_time') }}</label>
                                             <input
                                                 id="datetime"
@@ -737,7 +859,7 @@ const updateQmAndPrice = async () => {
                                             />
                                         </div>
                                         
-                                        <div v-if="multipleDays">
+                                        <div v-if="multipleDays && !individualDays">
                                             <label for="endDateTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.end_date_time') }}</label>
                                             <input
                                                 id="endDateTime"
@@ -749,6 +871,47 @@ const updateQmAndPrice = async () => {
                                             />
                                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('performance.multiple_days_info') }}</p>
                                         </div>
+                                        
+                                        <!-- Individuelle Tage Auswahl -->
+                                        <div v-if="individualDays" class="space-y-2">
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.individual_dates') }}</label>
+                                            <div class="flex gap-2">
+                                                <input
+                                                    type="datetime-local"
+                                                    v-model="dateTime"
+                                                    @change="handleIndividualDateChange"
+                                                    class="flex-1 block border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    @click="addIndividualDate"
+                                                    class="px-3 py-1 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 text-sm"
+                                                >
+                                                    {{ t('performance.add_date') }}
+                                                </button>
+                                            </div>
+                                            <div v-if="selectedIndividualDates.length > 0" class="mt-2 space-y-1">
+                                                <div
+                                                    v-for="(date, index) in selectedIndividualDates"
+                                                    :key="index"
+                                                    class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md"
+                                                >
+                                                    <span class="text-sm text-gray-900 dark:text-white">{{ formatDateHours(date) }}</span>
+                                                    <button
+                                                        type="button"
+                                                        @click="removeIndividualDate(index)"
+                                                        class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-4 h-4">
+                                                            <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('performance.individual_days_info') }}</p>
+                                            <p class="mt-1 text-xs text-orange-600 dark:text-orange-400">{{ t('performance.weekend_auto_removed') }}</p>
+                                        </div>
+                                        
                                         <div>
                                             <label for="performance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('performance.performance') }}</label>
                                             <Field id="performance" name="performance" type="text" class="block w-full mt-1 border-2 border-gray-700/50 dark:border-gray-600 rounded-md p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />

@@ -38,6 +38,7 @@
                         <input
                             v-model="form.amount"
                             type="number"
+                            @input="replaceCommaWithDot"
                             step="0.01"
                             min="0"
                             required
@@ -227,6 +228,16 @@ const deleteCharge = (chargeId) => {
 
 const formatDate = (date) => {
     return dayjs(date).format('DD.MM.YYYY');
+};
+
+const replaceCommaWithDot = (event) => {
+    if (event.target.value && typeof event.target.value === 'string' && event.target.value.includes(',')) {
+        const newValue = event.target.value.replace(/,/g, '.');
+        event.target.value = newValue;
+        form.amount = newValue;
+        // Trigger input event erneut, damit v-model aktualisiert wird
+        event.target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 };
 
 const totalAmount = computed(() => {

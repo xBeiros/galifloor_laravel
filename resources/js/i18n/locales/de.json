@@ -171,12 +171,16 @@
                 "name": "Name",
                 "category": "Kategorie",
                 "description": "Beschreibung",
+                "expiry_date": "Ablaufdatum",
                 "file": "Datei"
             },
             "edit_modal": {
                 "title": "Dokument bearbeiten",
                 "new_file": "Neue Datei"
-            }
+            },
+            "expires": "Läuft ab",
+            "expired": "Abgelaufen",
+            "expiring_soon": "Läuft bald ab"
         },
         "confirm_delete": "Möchten Sie dieses Dokument wirklich löschen?"
     },
@@ -338,8 +342,15 @@
         "cash_discount": "Skonto",
         "invoice_amount": "Rechnungssumme",
         "submit": "Termin Eintragen",
-        "multiple_days": "Mehrere Tage",
-        "multiple_days_info": "Wenn aktiviert, wird für jeden Tag im Datumsbereich eine separate Leistung erstellt.",
+        "multiple_days": "Mehrere Tage (Zeitraum)",
+        "multiple_days_info": "Wenn aktiviert, wird für jeden Werktag im Datumsbereich eine separate Leistung erstellt.",
+        "individual_days": "Individuelle Tage",
+        "individual_dates": "Individuelle Termine",
+        "add_date": "Datum hinzufügen",
+        "individual_days_info": "Wählen Sie einzelne Tage aus, an denen die Leistung erbracht wird (z.B. Montag, Dienstag, nächste Woche Donnerstag). Wochenenden (Samstag/Sonntag) sind nicht erlaubt.",
+        "individual_dates_required": "Mindestens ein individuelles Datum ist erforderlich",
+        "weekend_not_allowed": "Wochenenden (Samstag und Sonntag) können nicht ausgewählt werden. Bitte wählen Sie einen Werktag aus.",
+        "weekend_auto_removed": "Hinweis: Wochenenden werden automatisch entfernt, falls versehentlich ausgewählt.",
         "end_date_required": "Enddatum ist erforderlich",
         "end_date_after_start": "Enddatum muss nach Startdatum sein",
         "change_date": "Datum ändern",

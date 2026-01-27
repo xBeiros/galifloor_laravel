@@ -33,11 +33,14 @@ class PerformanceController extends Controller
             'performance' => 'required|string',
             'date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:date',
+            'individual_dates' => 'nullable|array',
+            'individual_dates.*' => 'date',
             'qm' => 'required|numeric',
             'price' => 'required|numeric',
             'flatrate' => 'boolean',
             'status' => 'in:no_change,date_change,canceled,modified',
             'multiple_days' => 'boolean',
+            'individual_days' => 'boolean',
         ]);
         
         // Konvertiere qm zu Integer
@@ -47,11 +50,25 @@ class PerformanceController extends Controller
         $formattedDate = Carbon::parse($request->date)->format('Y-m-d H:i:s');
         $formattedEndDate = $request->end_date ? Carbon::parse($request->end_date)->format('Y-m-d H:i:s') : null;
         
-        // Erstelle EINE Performance mit Start- und Enddatum
+        // Individuelle Tage verarbeiten
+        $individualDates = null;
+        if ($request->has('individual_dates') && is_array($request->individual_dates) && count($request->individual_dates) > 0) {
+            // Formatiere alle individuellen Daten
+            $individualDates = array_map(function($date) {
+                return Carbon::parse($date)->format('Y-m-d H:i:s');
+            }, $request->individual_dates);
+            // Sortiere die Daten chronologisch
+            usort($individualDates, function($a, $b) {
+                return strtotime($a) - strtotime($b);
+            });
+        }
+        
+        // Erstelle EINE Performance mit Start- und Enddatum oder individuellen Tagen
         $performance = $invoice->performances()->create([
             'performance' => $request->performance,
             'date' => $formattedDate,
             'end_date' => $formattedEndDate,
+            'individual_dates' => $individualDates,
             'qm' => $qm,
             'price' => $request->price,
             'flatrate' => $request->flatrate ?? false,
@@ -62,7 +79,14 @@ class PerformanceController extends Controller
 
         // Aktualisiere Invoice start_date und end_date falls nötig
         $startDate = Carbon::parse($request->date)->startOfDay();
-        $finalEndDate = $request->end_date ? Carbon::parse($request->end_date)->startOfDay() : $startDate;
+        
+        // Bestimme das Enddatum: individuelle Tage, end_date oder startDate
+        if ($individualDates && count($individualDates) > 0) {
+            // Verwende das letzte individuelle Datum
+            $finalEndDate = Carbon::parse(end($individualDates))->startOfDay();
+        } else {
+            $finalEndDate = $request->end_date ? Carbon::parse($request->end_date)->startOfDay() : $startDate;
+        }
         
         if ($invoice->start_date === null || $startDate->lt(Carbon::parse($invoice->start_date))) {
             $invoice->start_date = $startDate->format('Y-m-d');

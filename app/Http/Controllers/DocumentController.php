@@ -29,6 +29,7 @@ class DocumentController extends Controller
             'name' => 'required|string|max:255',
             'category' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'expiry_date' => 'nullable|date',
             'file' => 'required|file|max:10240', // Max 10MB
         ]);
 
@@ -56,6 +57,7 @@ class DocumentController extends Controller
             'name' => 'required|string|max:255',
             'category' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'expiry_date' => 'nullable|date',
             'file' => 'nullable|file|max:10240',
         ]);
 

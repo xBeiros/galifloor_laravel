@@ -329,9 +329,23 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
             yOffset = 5;
         } else {
             doc.setFontSize(8);
-            // Prüfe ob mehrere Tage vorhanden sind
-            if (performance.end_date) {
-                // Mehrere Tage: Alle Werktage auflisten
+            // Prüfe ob individuelle Tage vorhanden sind
+            if (performance.individual_dates && Array.isArray(performance.individual_dates) && performance.individual_dates.length > 0) {
+                // Individuelle Tage: Alle Tage auflisten (ohne Wochenenden filtern)
+                performance.individual_dates.forEach((dateStr: string) => {
+                    const individualDate = dayjs(dateStr);
+                    const dayOfWeek = individualDate.day();
+                    // Nur Werktage (Montag bis Freitag)
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        const individualWeekday = individualDate.format("dddd");
+                        const individualKW = individualDate.week();
+                        doc.text(`${individualWeekday}, ${individualDate.format("DD.MM.YYYY")} (KW ${individualKW})`, 15, executionY);
+                        executionY += 5;
+                    }
+                });
+                yOffset = 0; // Y-Offset wird bereits in der Schleife angepasst
+            } else if (performance.end_date) {
+                // Mehrere Tage (Zeitraum): Alle Werktage auflisten
                 const workingDays = getWorkingDays(performance.date, performance.end_date);
                 if (workingDays.length > 0) {
                     workingDays.forEach((dayText) => {

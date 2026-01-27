@@ -14,6 +14,7 @@ class Performance extends Model
         'performance',
         'date',
         'end_date',
+        'individual_dates',
         'date_changed_to',
         'qm',
         'price',
@@ -24,6 +25,7 @@ class Performance extends Model
 
     protected $casts = [
         'modified_after_issue' => 'boolean',
+        'individual_dates' => 'array',
     ];
 
     public function invoice()

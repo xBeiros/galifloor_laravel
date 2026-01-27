@@ -15,6 +15,11 @@ class Document extends Model
         'original_name',
         'file_path',
         'description',
+        'expiry_date',
+    ];
+
+    protected $casts = [
+        'expiry_date' => 'date',
     ];
 
     public function getDownloadUrlAttribute()
