@@ -129,6 +129,10 @@
             "email": "E-Mail",
             "actions": "Aktionen",
             "edit": "Bearbeiten",
+            "delete": "Löschen",
+            "delete_confirm": "Möchten Sie diese Firma wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+            "delete_confirm_second": "Sind Sie sich absolut sicher? Diese Firma wird unwiderruflich gelöscht. Bitte bestätigen Sie erneut.",
+            "delete_error": "Fehler beim Löschen der Firma.",
             "modal": {
                 "name": "Name",
                 "email": "E-Mail",

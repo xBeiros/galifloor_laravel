@@ -103,19 +103,18 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
 
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold");
-    doc.text("Bauvorhaben:", 15, bauvorhabenStartY);
-    doc.text("Projekt Nr. ", 50, bauvorhabenStartY);
+    doc.text("Bauvorhaben:", 15, bauvorhabenStartY-5);
+    doc.text("Projekt Nr. ", 50, bauvorhabenStartY-5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0,0,155);
-    doc.text(order.project_number, 65, bauvorhabenStartY);
+    doc.text(order.project_number, 65, bauvorhabenStartY-5);
     doc.setTextColor(81,82,84);
     doc.setFont("helvetica", "bold");
-    doc.text("Anschrift:", 15, bauvorhabenStartY + 3);
+    doc.text("Anschrift:", 15, bauvorhabenStartY - 2);
     doc.setFont("helvetica", "normal");
-    doc.text(order.construction, 15, bauvorhabenStartY + 5.5);
-    doc.text(order.address, 15, bauvorhabenStartY + 8.5);
+    doc.text(order.construction, 15, bauvorhabenStartY + 4.5);
+    doc.text(order.address, 15, bauvorhabenStartY + 8);
     doc.text(order.postal + " " + order.city, 15, bauvorhabenStartY + 11.5);
-    doc.text(order.city, 15, bauvorhabenStartY + 14.5);
 
     // Tabelle - Startposition dynamisch anpassen
     const tableStartY = bauvorhabenStartY + 18; // Abstand nach Anschrift (mehr Platz für Stadt)
@@ -211,7 +210,7 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
     // Skonto anzeigen
     doc.setFont("helvetica", "normal");
     doc.text("Skonto", 17, currentY);
-    doc.text(cashDiscountPercent + " %", 150, currentY, { align: "right" });
+    doc.text(cashDiscountPercent + " %", 155, currentY, { align: "right" });
     doc.text(`${cashDiscount.toFixed(2)} €`, 193, currentY, { align: "right" });
     currentY += 4;
 
@@ -276,6 +275,33 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
         doc.line(intermediateLineStartX, currentY + 5, intermediateLineEndX, currentY + 5);
     }
 
+    // Funktion zum Generieren der einzelnen Werktage (ohne Wochenenden)
+    const getWorkingDays = (startDate: any, endDate: any) => {
+        if (!startDate || !endDate) return [];
+        
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+        const days: string[] = [];
+        
+        let current = start.startOf('day');
+        const endDay = end.startOf('day');
+        
+        // Prüfe ob current <= endDay
+        while (current.isBefore(endDay) || current.isSame(endDay, 'day')) {
+            // Wochentag: 0 = Sonntag, 6 = Samstag
+            const dayOfWeek = current.day();
+            // Nur Werktage (Montag bis Freitag)
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                const weekday = current.format("dddd");
+                const kw = current.week();
+                days.push(`${weekday}, ${current.format("DD.MM.YYYY")} (KW ${kw})`);
+            }
+            current = current.add(1, 'day');
+        }
+        
+        return days;
+    };
+
     // Ausführungdatum
     doc.setFont("helvetica", "normal");
     doc.text("Ausführungsdatum:", 15, currentY + 10);
@@ -296,15 +322,15 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
             const newWeekday = newDate.format("dddd"); // Wochentag für geändertes Datum
 
             doc.setFont("helvetica", "normal");
-            doc.text(`${newWeekday}, ${newDate.format("DD.MM.YYYY HH:mm")} (KW ${newDate.week()})`, 15, currentY);
+            doc.text(`${newWeekday}, ${newDate.format("DD.MM.YYYY HH:mm")} (KW ${newDate.week()})`, 15, executionY);
 
             doc.setFontSize(8);
             doc.setTextColor(255, 0, 0);
             const oldDateText = `${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`;
             const oldDateX = 68;
-            doc.text(oldDateText, oldDateX, currentY);
+            doc.text(oldDateText, oldDateX, executionY);
             const textWidth = doc.getTextWidth(oldDateText);
-            doc.line(oldDateX, currentY - 1, oldDateX + textWidth, currentY - 1); // Linie durch Text
+            doc.line(oldDateX, executionY - 1, oldDateX + textWidth, executionY - 1); // Linie durch Text
             doc.setTextColor(81,82,84);
             doc.setFontSize(8);
 
@@ -314,16 +340,33 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
             doc.setFontSize(8);
             doc.setTextColor(255, 0, 0);
             const canceledText = `${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`;
-            doc.text(canceledText, 15, currentY);
+            doc.text(canceledText, 15, executionY);
             const textWidth = doc.getTextWidth(canceledText);
-            doc.line(15, currentY - 1, 15 + textWidth, currentY - 1);
+            doc.line(15, executionY - 1, 15 + textWidth, executionY - 1);
             doc.setTextColor(81,82,84);
             yOffset = 5;
         } else {
-            doc.setFontSize(8)
-            // Normales Datum ohne Änderung
-            doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, currentY);
-            yOffset = 5;
+            doc.setFontSize(8);
+            // Prüfe ob mehrere Tage vorhanden sind
+            if (performance.end_date) {
+                // Mehrere Tage: Alle Werktage auflisten
+                const workingDays = getWorkingDays(performance.date, performance.end_date);
+                if (workingDays.length > 0) {
+                    workingDays.forEach((dayText) => {
+                        doc.text(dayText, 15, executionY);
+                        executionY += 5;
+                    });
+                    yOffset = 0; // Y-Offset wird bereits in der Schleife angepasst
+                } else {
+                    // Fallback: Wenn keine Werktage gefunden, normales Datum anzeigen
+                    doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, executionY);
+                    yOffset = 5;
+                }
+            } else {
+                // Normales Datum ohne Änderung
+                doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, executionY);
+                yOffset = 5;
+            }
         }
 
         executionY += yOffset; // Y-Position aktualisieren

@@ -67,3 +67,4 @@ class ChargeController extends Controller
         return redirect()->back()->with('success', 'Belastungsanzeige erfolgreich gelöscht.');
     }
 }
+

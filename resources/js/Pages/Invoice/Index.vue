@@ -26,6 +26,10 @@ const open = ref(false);
 const companies = ref([]);
 const invoices = ref([]);
 
+// Sortierung
+const sortColumn = ref('invoice_number'); // Standard: Rechnungsnummer
+const sortDirection = ref('desc'); // Standard: absteigend (höchste zuerst)
+
 // Filter und Suchfelder
 const searchInvoiceNumber = ref("");
 const searchCity = ref("");
@@ -54,9 +58,9 @@ const availableYears = computed(() => {
     return Array.from(years).sort((a, b) => b - a); // Absteigend sortiert
 });
 
-// Gefilterte Rechnungen
+// Gefilterte und sortierte Rechnungen
 const filteredInvoices = computed(() => {
-    return invoices.value.filter((invoice) => {
+    let filtered = invoices.value.filter((invoice) => {
         // Filter nach Jahr
         if (selectedYear.value && invoice.year?.toString() !== selectedYear.value) {
             return false;
@@ -85,6 +89,59 @@ const filteredInvoices = computed(() => {
 
         return true;
     });
+
+    // Sortierung anwenden
+    return filtered.sort((a, b) => {
+        let aValue, bValue;
+
+        switch (sortColumn.value) {
+            case 'invoice_number':
+                // Sortiere nach Jahr und Order Number
+                const aYear = a.year || 0;
+                const bYear = b.year || 0;
+                const aOrder = a.order_number || 0;
+                const bOrder = b.order_number || 0;
+                if (aYear !== bYear) {
+                    aValue = aYear;
+                    bValue = bYear;
+                } else {
+                    aValue = aOrder;
+                    bValue = bOrder;
+                }
+                break;
+            case 'project_number':
+                aValue = a.project_number || '';
+                bValue = b.project_number || '';
+                break;
+            case 'company':
+                aValue = a?.company?.name || '';
+                bValue = b?.company?.name || '';
+                break;
+            case 'construction':
+                aValue = a.construction || '';
+                bValue = b.construction || '';
+                break;
+            case 'city':
+                aValue = a.city || '';
+                bValue = b.city || '';
+                break;
+            case 'status':
+                aValue = a.status || '';
+                bValue = b.status || '';
+                break;
+            default:
+                return 0;
+        }
+
+        // Vergleich für Strings und Zahlen
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+            const comparison = aValue.localeCompare(bValue, 'de', { numeric: true, sensitivity: 'base' });
+            return sortDirection.value === 'asc' ? comparison : -comparison;
+        } else {
+            const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+            return sortDirection.value === 'asc' ? comparison : -comparison;
+        }
+    });
 });
 
 const fetchCompanies = async () => {
@@ -105,6 +162,8 @@ const onSubmit = async (values) => {
 
         //toast.success('Rechnung erfolgreich erstellt!');
         open.value = false;
+        // Liste aktualisieren
+        await fetchInvoices();
     } catch (error) {
         console.error("Fehler beim Erstellen der Rechnung:", error);
         //toast.error('Fehler beim Erstellen der Rechnung');
@@ -118,6 +177,26 @@ const fetchInvoices = async () => {
     } catch (error) {
         console.error("Fehler beim Laden der Rechnungen:", error);
     }
+};
+
+// Sortierung umschalten
+const toggleSort = (column) => {
+    if (sortColumn.value === column) {
+        // Wenn bereits nach dieser Spalte sortiert, Richtung umkehren
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        // Neue Spalte, Standard: absteigend
+        sortColumn.value = column;
+        sortDirection.value = 'desc';
+    }
+};
+
+// Sortier-Indikator anzeigen
+const getSortIcon = (column) => {
+    if (sortColumn.value !== column) {
+        return null; // Kein Icon wenn nicht sortiert
+    }
+    return sortDirection.value === 'asc' ? '↑' : '↓';
 };
 
 const goToInvoice = async (invoiceId) => {
@@ -298,13 +377,43 @@ onMounted(async () => {
                         <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                             <thead>
                             <tr>
-                                <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 py-3.5 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.invoice_number') }}</th>
-                                <th scope="col" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter sm:table-cell">{{ t('invoices.project_number') }}</th>
-                                <th scope="col" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter lg:table-cell">{{ t('invoices.company') }}</th>
-                                <th scope="col" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter lg:table-cell">{{ t('invoices.construction') }}</th>
+                                <th scope="col" @click="toggleSort('invoice_number')" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 py-3.5 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.invoice_number') }}
+                                        <span v-if="getSortIcon('invoice_number')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('invoice_number') }}</span>
+                                    </div>
+                                </th>
+                                <th scope="col" @click="toggleSort('project_number')" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter sm:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.project_number') }}
+                                        <span v-if="getSortIcon('project_number')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('project_number') }}</span>
+                                    </div>
+                                </th>
+                                <th scope="col" @click="toggleSort('company')" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.company') }}
+                                        <span v-if="getSortIcon('company')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('company') }}</span>
+                                    </div>
+                                </th>
+                                <th scope="col" @click="toggleSort('construction')" class="sticky top-0 z-10 hidden border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.construction') }}
+                                        <span v-if="getSortIcon('construction')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('construction') }}</span>
+                                    </div>
+                                </th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.address') }}</th>
-                                <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.city') }}</th>
-                                <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.status') }}</th>
+                                <th scope="col" @click="toggleSort('city')" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.city') }}
+                                        <span v-if="getSortIcon('city')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('city') }}</span>
+                                    </div>
+                                </th>
+                                <th scope="col" @click="toggleSort('status')" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none">
+                                    <div class="flex items-center gap-1">
+                                        {{ t('invoices.status') }}
+                                        <span v-if="getSortIcon('status')" class="text-indigo-600 dark:text-indigo-400">{{ getSortIcon('status') }}</span>
+                                    </div>
+                                </th>
                                 <th scope="col" class="sticky top-0 z-10 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white backdrop-blur backdrop-filter">{{ t('invoices.actions') }}</th>
                             </tr>
                             </thead>

@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { PlusIcon } from "@heroicons/vue/24/outline";
+import { PlusIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import {
     Dialog,
     DialogOverlay,
@@ -85,6 +85,36 @@ const goToCompany = (companyId) => {
     router.visit(`/company/${companyId}`);
 };
 
+const deleteCompany = async (companyId, event) => {
+    event.stopPropagation();
+    
+    // Erste Bestätigung
+    if (!confirm(t('company.index.delete_confirm'))) {
+        return;
+    }
+    
+    // Zweite Bestätigung
+    if (!confirm(t('company.index.delete_confirm_second'))) {
+        return;
+    }
+    
+    try {
+        const response = await axios.delete(`/companies/${companyId}`);
+        if (response.data.success) {
+            await fetchCompanies();
+        } else {
+            alert(response.data.message || t('company.index.delete_error'));
+        }
+    } catch (error) {
+        console.error("Fehler beim Löschen:", error);
+        if (error.response?.data?.message) {
+            alert(error.response.data.message);
+        } else {
+            alert(t('company.index.delete_error'));
+        }
+    }
+};
+
 onMounted(fetchCompanies);
 </script>
 
@@ -130,7 +160,12 @@ onMounted(fetchCompanies);
                     <td class="py-2 text-sm text-gray-700 dark:text-gray-300">{{ company.postal }} {{ company.city }}</td>
                     <td class="py-2 text-sm text-gray-700 dark:text-gray-300">{{ company.email }}</td>
                     <td class="py-2" @click.stop>
-                        <button @click="openEditModal(company)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">{{ t('company.index.edit') }}</button>
+                        <div class="flex items-center gap-3">
+                            <button @click="openEditModal(company)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">{{ t('company.index.edit') }}</button>
+                            <button @click="deleteCompany(company.id, $event)" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300" :title="t('company.index.delete')">
+                                <TrashIcon class="w-5 h-5" />
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -154,9 +189,14 @@ onMounted(fetchCompanies);
                                     <span class="font-medium">{{ t('company.index.email') }}:</span> {{ company.email }}
                                 </p>
                             </div>
-                            <button @click.stop="openEditModal(company)" class="mt-3 text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
-                                {{ t('company.index.edit') }}
-                            </button>
+                            <div class="flex items-center gap-3 mt-3">
+                                <button @click.stop="openEditModal(company)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
+                                    {{ t('company.index.edit') }}
+                                </button>
+                                <button @click.stop="deleteCompany(company.id, $event)" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300" :title="t('company.index.delete')">
+                                    <TrashIcon class="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -257,6 +257,33 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
         doc.line(intermediateLineStartX, currentY + 5, intermediateLineEndX, currentY + 5);
     }
 
+    // Funktion zum Generieren der einzelnen Werktage (ohne Wochenenden)
+    const getWorkingDays = (startDate: any, endDate: any) => {
+        if (!startDate || !endDate) return [];
+        
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+        const days: string[] = [];
+        
+        let current = start.startOf('day');
+        const endDay = end.startOf('day');
+        
+        // Prüfe ob current <= endDay
+        while (current.isBefore(endDay) || current.isSame(endDay, 'day')) {
+            // Wochentag: 0 = Sonntag, 6 = Samstag
+            const dayOfWeek = current.day();
+            // Nur Werktage (Montag bis Freitag)
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                const weekday = current.format("dddd");
+                const kw = current.week();
+                days.push(`${weekday}, ${current.format("DD.MM.YYYY")} (KW ${kw})`);
+            }
+            current = current.add(1, 'day');
+        }
+        
+        return days;
+    };
+
     // Ausführungdatum
     doc.setFont("helvetica", "normal");
     doc.text("Ausführungsdatum:", 15, currentY + 10);
@@ -277,15 +304,15 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
             const newWeekday = newDate.format("dddd"); // Wochentag für geändertes Datum
 
             doc.setFont("helvetica", "normal");
-            doc.text(`${newWeekday}, ${newDate.format("DD.MM.YYYY HH:mm")} (KW ${newDate.week()})`, 15, currentY);
+            doc.text(`${newWeekday}, ${newDate.format("DD.MM.YYYY HH:mm")} (KW ${newDate.week()})`, 15, executionY);
 
             doc.setFontSize(8);
             doc.setTextColor(255, 0, 0);
             const oldDateText = `${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`;
             const oldDateX = 68;
-            doc.text(oldDateText, oldDateX, currentY);
+            doc.text(oldDateText, oldDateX, executionY);
             const textWidth = doc.getTextWidth(oldDateText);
-            doc.line(oldDateX, currentY - 1, oldDateX + textWidth, currentY - 1); // Linie durch Text
+            doc.line(oldDateX, executionY - 1, oldDateX + textWidth, executionY - 1); // Linie durch Text
             doc.setTextColor(81,82,84);
             doc.setFontSize(8);
 
@@ -295,16 +322,33 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
             doc.setFontSize(8);
             doc.setTextColor(255, 0, 0);
             const canceledText = `${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`;
-            doc.text(canceledText, 15, currentY);
+            doc.text(canceledText, 15, executionY);
             const textWidth = doc.getTextWidth(canceledText);
-            doc.line(15, currentY - 1, 15 + textWidth, currentY - 1);
+            doc.line(15, executionY - 1, 15 + textWidth, executionY - 1);
             doc.setTextColor(81,82,84);
             yOffset = 5;
         } else {
-            doc.setFontSize(8)
-            // Normales Datum ohne Änderung
-            doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, currentY);
-            yOffset = 5;
+            doc.setFontSize(8);
+            // Prüfe ob mehrere Tage vorhanden sind
+            if (performance.end_date) {
+                // Mehrere Tage: Alle Werktage auflisten
+                const workingDays = getWorkingDays(performance.date, performance.end_date);
+                if (workingDays.length > 0) {
+                    workingDays.forEach((dayText) => {
+                        doc.text(dayText, 15, executionY);
+                        executionY += 5;
+                    });
+                    yOffset = 0; // Y-Offset wird bereits in der Schleife angepasst
+                } else {
+                    // Fallback: Wenn keine Werktage gefunden, normales Datum anzeigen
+                    doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, executionY);
+                    yOffset = 5;
+                }
+            } else {
+                // Normales Datum ohne Änderung
+                doc.text(`${weekday}, ${date.format("DD.MM.YYYY HH:mm")} (KW ${kw})`, 15, executionY);
+                yOffset = 5;
+            }
         }
 
         executionY += yOffset; // Y-Position aktualisieren

@@ -211,4 +211,47 @@ class CompanyController extends Controller
         return redirect()->route('company.details')->with('success', 'Firmeninformationen erfolgreich aktualisiert');
     }
 
+    /**
+     * Firma löschen.
+     */
+    public function destroy($id)
+    {
+        $company = Company::findOrFail($id);
+
+        // Prüfe, ob es Rechnungen für diese Firma gibt
+        if ($company->invoices()->count() > 0) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Diese Firma kann nicht gelöscht werden, da sie noch Rechnungen hat.'
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'Diese Firma kann nicht gelöscht werden, da sie noch Rechnungen hat.');
+        }
+
+        // Lösche alle zugehörigen Dokumente
+        foreach ($company->documents as $document) {
+            Storage::disk('public')->delete($document->file_path);
+            $document->delete();
+        }
+
+        // Lösche Firmenbild, falls vorhanden
+        if ($company->image_url) {
+            $imagePath = str_replace('storage/', '', str_replace('/storage/', '', $company->image_url));
+            Storage::disk('public')->delete($imagePath);
+        }
+
+        // Lösche die Firma
+        $company->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Firma erfolgreich gelöscht.'
+            ]);
+        }
+
+        return redirect()->route('companies')->with('success', 'Firma erfolgreich gelöscht.');
+    }
+
 }

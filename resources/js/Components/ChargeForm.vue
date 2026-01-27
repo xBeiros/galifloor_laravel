@@ -234,3 +234,4 @@ const totalAmount = computed(() => {
     return props.charges.reduce((sum, charge) => sum + parseFloat(charge.amount || 0), 0);
 });
 </script>
+

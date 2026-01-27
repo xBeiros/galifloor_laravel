@@ -28,3 +28,4 @@ class Charge extends Model
         return $this->belongsTo(Invoice::class);
     }
 }
+

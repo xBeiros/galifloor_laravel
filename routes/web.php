@@ -103,6 +103,7 @@ Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])
     ->name('invoices.destroy');
 
 Route::get('/companies', [CompanyController::class, 'index'])->middleware(['auth', 'verified'])->name('companies');
+Route::delete('/companies/{id}', [CompanyController::class, 'destroy'])->middleware(['auth', 'verified'])->name('companies.destroy');
 Route::get('/company/details', [CompanyController::class, 'showAll'])->middleware(['auth', 'verified'])->name('company.details');
 Route::put('/company/details', [CompanyController::class, 'updateOwnCompany'])->middleware(['auth', 'verified'])->name('company.details.update');
 Route::get('/company/{company}', [CompanyController::class, 'show'])->middleware(['auth', 'verified'])->name('companies.show');
