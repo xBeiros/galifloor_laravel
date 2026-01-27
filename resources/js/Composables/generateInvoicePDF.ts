@@ -407,7 +407,7 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
         // Für Download: PDF direkt speichern
         // Berechne KW basierend auf dem Ausstellungsdatum
         const currentKW = invoiceDate.week();
-        const fileName = "RG-" + order.year + "-" + order.order_number + "-" + order.company.name + " - " + order.company.city + " - KW " + currentKW + ".pdf";
+        const fileName = "RG-" + order.year + "-" + order.order_number + "-" + order.company.name + " - " + order.city + " - KW " + currentKW + ".pdf";
         doc.save(fileName);
     }
 };
