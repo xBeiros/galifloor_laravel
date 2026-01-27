@@ -405,6 +405,9 @@ export const generateInvoice = (orderr: any, preview: boolean = false) =>{
         setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
     } else {
         // Für Download: PDF direkt speichern
-        doc.save("RG-" + order.year + "-" + order.order_number + "-" + order.company.name + ".pdf");
+        // Berechne KW basierend auf dem Ausstellungsdatum
+        const currentKW = invoiceDate.week();
+        const fileName = "RG-" + order.year + "-" + order.order_number + "-" + order.company.name + " - " + order.company.city + " - KW " + currentKW + ".pdf";
+        doc.save(fileName);
     }
 };

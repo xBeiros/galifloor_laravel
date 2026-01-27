@@ -383,8 +383,12 @@ export const generateInvoiceAndSend = async (orderr: any) =>{
     // PDF als Blob generieren
     const pdfBlob = doc.output("blob");
 
+    // Berechne KW basierend auf dem Ausstellungsdatum (invoiceDate ist bereits oben definiert)
+    const currentKW = invoiceDate.week();
+    const fileName = `invoice-${orderr.year}-${orderr.order_number}-KW${currentKW}.pdf`;
+
     const formData = new FormData();
-    formData.append("pdf", pdfBlob, `invoice-${orderr.year}-${orderr.order_number}.pdf`);
+    formData.append("pdf", pdfBlob, fileName);
     formData.append("order_number", orderr.order_number); // 🛠️ Korrekt als "order_id" senden
 
     try {
